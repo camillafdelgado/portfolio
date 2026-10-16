@@ -1,16 +1,68 @@
 ---
+import Layout from '../layouts/Layout.astro';
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout>
+	<main class="container">
+		<section class="hero">
+			<h1 class="hero-title">
+				Camilla is a product designer who makes complex systems easy to use.{' '}
+				<span class="muted">Interested in AI, design systems, and fun interactions.</span>
+			</h1>
+
+			<dl class="facts">
+				<div>
+					<dt class="label">Currently</dt>
+					<dd>MS Human-Centered Design &amp; Engineering @ UW</dd>
+				</div>
+				<div>
+					<dt class="label">Previously</dt>
+					<dd>WA211, Ogilvy</dd>
+				</div>
+			</dl>
+		</section>
+	</main>
+</Layout>
+
+<style>
+	.hero {
+		display: flex;
+		flex-direction: column;
+		gap: 24px;
+		padding-top: 140px;
+	}
+
+	.facts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px 24px;
+		margin: 0;
+	}
+
+	.facts div {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		min-width: 356px;
+	}
+
+	.facts div:last-child {
+		min-width: 0;
+	}
+
+	dd {
+		margin: 0;
+	}
+
+	@media (max-width: 640px) {
+		.hero {
+			padding-top: 80px;
+		}
+		.hero-title {
+			font-size: 28px;
+		}
+		.facts div {
+			min-width: 0;
+		}
+	}
+</style>
