@@ -1,0 +1,667 @@
+---
+/**
+ * The hero card's scene: a little pixel Seattle that changes with the time of
+ * day (a nod to Coffee Talk). Pixel shapes, smooth motion and light:
+ *   - skyline in the card's empty bottom-right (bottom strip on small screens):
+ *     buildings, the Space Needle (beacon + gliding elevator), Mount Rainier
+ *     by day, and Elliott Bay below with glints
+ *   - windows and a little neon light up from sunset through the night
+ *   - day: sun with slow rays, clouds at two depths, sunlight sweeping across
+ *     the windows, gulls along the waterfront, the odd plane with a contrail
+ *   - sunrise/sunset: sun low over the city, golden glints on the towers
+ *   - dusk/night/pre-dawn: moon, twinkling stars, Seattle rain
+ *   - interactive: click the sky for a shooting
+ *     star (dark phases) or a few birds (light phases)
+ * Nothing is drawn on the text. 60fps, paused offscreen, one still frame for
+ * reduced motion.
+ */
+---
+
+<canvas class="hero-scene" aria-hidden="true" data-hero-scene></canvas>
+
+<style>
+	.hero-scene {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		z-index: -1;
+		pointer-events: none;
+	}
+</style>
+
+<script>
+	type Rect = { x: number; y: number; w: number; h: number };
+	type Building = { x: number; w: number; h: number };
+	type Win = { x: number; y: number; color: string; level: number; target: number };
+	type Star = { x: number; y: number; size: number; a: number; speed: number; p: number };
+	type Drop = { x: number; y: number; len: number; speed: number };
+	type Cloud = { sprite: HTMLCanvasElement; x: number; y: number; speed: number };
+	type Bird = { x: number; y: number; ty: number; vx: number; flap: number };
+	type Streak = { x: number; y: number; vx: number; vy: number; age: number; life: number };
+	type Glint = { x: number; y: number; len: number; speed: number; p: number; color: string };
+
+	const hero = document.querySelector<HTMLElement>('.hero')!;
+	const canvas = hero.querySelector<HTMLCanvasElement>('[data-hero-scene]')!;
+	const ctx = canvas.getContext('2d')!;
+	const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+	const PX = 3; // one art pixel, in CSS px
+	const TEXT_PAD = 8;
+	const DARK = ['night', 'predawn'];
+	const LIGHT = ['day', 'sunrise', 'sunset'];
+	const WATER = PX * 4; // Elliott Bay, under the city
+
+	// Per phase: city colors, window glow chance, rain, mountain, bay, glint color
+	const PHASES: Record<
+		string,
+		{
+			far: string;
+			near: string;
+			lit: number;
+			rain: string | null;
+			mountain: [string, string] | null;
+			water: string;
+			shine: string; // glints on the bay and the sunlight sheen on windows
+		}
+	> = {
+		day: { far: '#c3d5ea', near: '#9bb3cf', lit: 0, rain: null, mountain: ['#d3dff0', '#ffffff'], water: '#8fb6dc', shine: '#ffffff' },
+		sunrise: { far: '#ecc9c4', near: '#c39fae', lit: 0.08, rain: null, mountain: ['#efd3d0', '#fff6f0'], water: '#e0b4ae', shine: '#ffe2b8' },
+		sunset: { far: '#e2a7a3', near: '#93647c', lit: 0.2, rain: null, mountain: ['#eab8b2', '#ffe9e0'], water: '#c58784', shine: '#ffc98a' },
+		dusk: { far: '#b2a6d6', near: '#73639f', lit: 0.35, rain: '120, 100, 190', mountain: ['#c2b6e2', '#efe8fb'], water: '#8a7cbe', shine: '#f1e8ff' },
+		predawn: { far: '#323a66', near: '#22284a', lit: 0.25, rain: '170, 185, 240', mountain: null, water: '#262d55', shine: '' },
+		night: { far: '#222a52', near: '#151a35', lit: 0.45, rain: '170, 190, 255', mountain: null, water: '#121733', shine: '' },
+	};
+	const WINDOW_COLORS = ['#ffd27a', '#ffd27a', '#ffd27a', '#ffd27a', '#ffe3a6', '#ff8fc0', '#8ee8de'];
+
+	let w = 0;
+	let h = 0;
+	let dpr = 1;
+	let phase = 'day';
+	let textRects: Rect[] = [];
+	let region = { x0: 0, x1: 0, top: 0 }; // where the city may stand
+	let far: HTMLCanvasElement | null = null;
+	let near: HTMLCanvasElement | null = null;
+	let needle = { x: 0, y: 0, saucer: 0, base: 0 };
+	let glints: Glint[] = [];
+	let plane: { x: number; y: number; trail: number[] } | null = null;
+	let nextPlane = 0;
+	let windows: Win[] = [];
+	let stars: Star[] = [];
+	let drops: Drop[] = [];
+	let clouds: Cloud[] = [];
+	let birds: Bird[] = [];
+	let streaks: Streak[] = [];
+	let body: { x: number; y: number; r: number; kind: 'sun' | 'moon'; color: string; glow: string } | null = null;
+	let glowMax = 0; // the glow stops short of the nearest text
+	// Text-free lanes for things that fly across: along the top edge (above the
+	// headline) and low over the waterfront (above the bay).
+	let lanes = { top: 0, low: 0 };
+	let nextEvent = 0;
+	let running = false;
+	let visible = true;
+	let last = 0;
+
+	function rng(seed: number) {
+		return () => {
+			seed = (seed + 0x6d2b79f5) | 0;
+			let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+			t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+			return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+		};
+	}
+
+	const snap = (v: number) => Math.round(v / PX) * PX;
+
+	// Line-by-line boxes of the hero text, relative to the card.
+	function measureText() {
+		const o = hero.getBoundingClientRect();
+		const ox = o.left + hero.clientLeft;
+		const oy = o.top + hero.clientTop;
+		textRects = [];
+		hero.querySelectorAll('h1, dt, dd').forEach((el) => {
+			const range = document.createRange();
+			range.selectNodeContents(el);
+			for (const b of range.getClientRects()) {
+				textRects.push({ x: b.left - ox - TEXT_PAD, y: b.top - oy - TEXT_PAD, w: b.width + TEXT_PAD * 2, h: b.height + TEXT_PAD * 2 });
+			}
+		});
+	}
+
+	const onText = (x: number, y: number) => textRects.some((r) => x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h);
+	const circleClear = (x: number, y: number, r: number) =>
+		!textRects.some((t) => {
+			const cx = Math.max(t.x, Math.min(x, t.x + t.w));
+			const cy = Math.max(t.y, Math.min(y, t.y + t.h));
+			return (x - cx) ** 2 + (y - cy) ** 2 < r * r;
+		});
+
+	// The city stands where there's no text: the bottom-right on wide cards,
+	// a strip along the bottom on narrow ones (the card adds room there in CSS).
+	function findRegion() {
+		const wide = w >= 760;
+		const x0 = wide ? Math.max(w * 0.52, 560) : 0;
+		const lowest = textRects
+			.filter((r) => r.x + r.w > x0)
+			.reduce((m, r) => Math.max(m, r.y + r.h), 0);
+		const top = Math.max(lowest + 6, h - (wide ? 160 : 110));
+		region = { x0: snap(x0), x1: w, top };
+	}
+
+	function sprite(width: number, height: number, paint: (g: CanvasRenderingContext2D) => void) {
+		const c = document.createElement('canvas');
+		c.width = Math.ceil(width * dpr);
+		c.height = Math.ceil(height * dpr);
+		const g = c.getContext('2d')!;
+		g.scale(dpr, dpr);
+		paint(g);
+		return c;
+	}
+
+	// Space Needle, in art pixels from its base (x = center).
+	function paintNeedle(g: CanvasRenderingContext2D, cx: number, base: number, height: number, color: string) {
+		const u = PX;
+		const rows = Math.max(28, Math.round(height / u));
+		g.fillStyle = color;
+		const px = (x: number, y: number, wd = 1) => g.fillRect(snap(cx) + x * u, base - (y + 1) * u, wd * u, u);
+		const legTop = Math.round(rows * 0.62);
+		for (let y = 0; y < legTop; y++) {
+			const spread = Math.round(2 - (y / legTop) * 1.5); // legs pinch in toward the top
+			px(-spread - 1, y, 1);
+			px(spread, y, 1);
+			if (y % 6 === 3) px(-spread, y, spread * 2); // cross braces
+		}
+		px(-1, legTop, 2);
+		px(-1, legTop + 1, 2);
+		px(-3, legTop + 2, 6); // under the saucer
+		px(-6, legTop + 3, 12); // the saucer
+		px(-5, legTop + 4, 10);
+		px(-3, legTop + 5, 6);
+		px(-1, legTop + 6, 2);
+		for (let y = legTop + 7; y < rows; y++) px(0, y, 1); // spire
+		needle = { x: snap(cx) + u / 2, y: base - rows * u, saucer: base - (legTop + 3) * u, base };
+	}
+
+	function build() {
+		phase = document.documentElement.dataset.phase || 'day';
+		const p = PHASES[phase] ?? PHASES.day;
+		const rand = rng([...phase].reduce((a, c) => a * 31 + c.charCodeAt(0), 7));
+		const regionW = region.x1 - region.x0;
+		const base = h - WATER; // the city stands on the bay
+		const maxH = base - region.top;
+
+		// Far layer: Mount Rainier (light phases) + hazy towers.
+		far = sprite(w, h, (g) => {
+			if (p.mountain) {
+				const [rock, snow] = p.mountain;
+				const cx = region.x0 + regionW * 0.3;
+				const half = regionW * 0.42;
+				const peak = maxH * 0.85;
+				for (let x = cx - half; x < cx + half; x += PX) {
+					const t = 1 - Math.abs(x - cx) / half;
+					const ht = snap(peak * Math.pow(t, 1.25));
+					g.fillStyle = rock;
+					g.fillRect(snap(x), base - ht, PX, ht);
+					const cap = snap(ht - peak * 0.72);
+					if (cap > 0) {
+						g.fillStyle = snow;
+						g.fillRect(snap(x), base - ht, PX, cap);
+					}
+				}
+			}
+			g.fillStyle = p.far;
+			for (let x = region.x0 + regionW * (p.mountain ? 0.55 : 0.15); x < w; ) {
+				const bw = snap(PX * (5 + rand() * 7));
+				const bh = snap(maxH * (0.25 + rand() * 0.35));
+				g.fillRect(snap(x), base - bh, bw, bh);
+				x += bw + PX * Math.floor(rand() * 3);
+			}
+		});
+
+		// Near layer: towers + the Space Needle, with a grid of windows.
+		windows = [];
+		const needleX = region.x0 + regionW * 0.36;
+		near = sprite(w, h, (g) => {
+			g.fillStyle = p.near;
+			const buildings: Building[] = [];
+			for (let x = region.x0 + PX * 2; x < w; ) {
+				const bw = snap(PX * (6 + rand() * 8));
+				if (Math.abs(x + bw / 2 - needleX) < PX * 9) {
+					x += PX * 18; // leave room around the Needle
+					continue;
+				}
+				const bh = snap(maxH * (0.22 + rand() * 0.5));
+				buildings.push({ x: snap(x), w: bw, h: bh });
+				g.fillRect(snap(x), base - bh, bw, bh);
+				if (rand() < 0.35) g.fillRect(snap(x) + PX * 2, base - bh - PX * 2, bw - PX * 4, PX * 2); // stepped roof
+				x += bw + PX * Math.floor(rand() * 2);
+			}
+			paintNeedle(g, needleX, base, maxH * 0.98, p.near);
+
+			for (const b of buildings) {
+				for (let y = base - b.h + PX * 2; y < base - PX * 2; y += PX * 3) {
+					for (let x = b.x + PX; x < b.x + b.w - PX; x += PX * 2) {
+						if (rand() > 0.55) continue;
+						const on = rand() < p.lit;
+						windows.push({
+							x,
+							y,
+							color: WINDOW_COLORS[Math.floor(rand() * WINDOW_COLORS.length)],
+							level: on ? 1 : 0,
+							target: on ? 1 : 0,
+						});
+					}
+				}
+			}
+		});
+
+		// Sun or moon, in a clear spot.
+		body = null;
+		const r = Math.max(10, Math.min(18, w * 0.017));
+		const corner: [number, number][] = [
+			[w - r * 3, r * 2.6],
+			[region.x0 + regionW * 0.8, region.top - r * 2],
+			[w * 0.85, h * 0.4],
+		];
+		const pick = (spots: [number, number][], rad: number) =>
+			spots.find(([x, y]) => circleClear(x, y, rad * 2.2)) ?? spots[spots.length - 1];
+		let sunX: number | null = null;
+		const distToText = (x: number, y: number) =>
+			Math.min(
+				Infinity,
+				...textRects.map((t) => Math.hypot(x - Math.max(t.x, Math.min(x, t.x + t.w)), y - Math.max(t.y, Math.min(y, t.y + t.h)))),
+			);
+		if (phase === 'day') {
+			const [x, y] = pick(corner, r);
+			body = { x, y, r, kind: 'sun', color: '#ffd25e', glow: '255, 214, 120' };
+		} else if (phase === 'sunrise' || phase === 'sunset') {
+			// Low over the city, just above the rooftops.
+			const x = region.x0 + regionW * (phase === 'sunrise' ? 0.7 : 0.62);
+			const y = base - maxH * (phase === 'sunrise' ? 0.9 : 0.8);
+			body = phase === 'sunrise'
+				? { x, y, r: r * 1.3, kind: 'sun', color: '#ffb066', glow: '255, 170, 100' }
+				: { x, y, r: r * 1.5, kind: 'sun', color: '#ff7a45', glow: '255, 120, 70' };
+			sunX = x;
+		} else {
+			const [x, y] = pick(corner, r * 0.9);
+			body = { x, y, r: r * 0.9, kind: 'moon', color: DARK.includes(phase) ? '#f1eedd' : '#fff1c9', glow: DARK.includes(phase) ? '220, 225, 255' : '255, 236, 190' };
+		}
+
+		glowMax = body ? Math.min(body.r * 3.2, distToText(body.x, body.y) - 12) : 0;
+
+		// Stars above the city, never on text.
+		stars = [];
+		if (phase !== 'day' && phase !== 'sunrise' && phase !== 'sunset') {
+			const count = Math.round(((w * h) / 4200) * (phase === 'night' ? 1 : phase === 'predawn' ? 0.55 : 0.25));
+			for (let i = 0; i < count; i++) {
+				const x = rand() * w;
+				const y = rand() * region.top;
+				if (onText(x, y)) continue;
+				stars.push({ x, y, size: rand() < 0.1 ? 3 : 2, a: 0.5 + rand() * 0.5, speed: 0.3 + rand() * 0.8, p: rand() * 6.3 });
+			}
+		}
+
+		// Seattle rain once the light goes.
+		drops = [];
+		if (p.rain) {
+			const count = Math.round((w * h) / 7000);
+			for (let i = 0; i < count; i++) drops.push({ x: rand() * w, y: rand() * h, len: 8 + rand() * 10, speed: 360 + rand() * 180 });
+		}
+
+		// Pixel clouds drifting in the light phases.
+		clouds = [];
+		if (!p.rain) {
+			const shapes = [
+				['   ####     ', '  ######  ##', ' ###########', '############'],
+				['     ###    ', '  ## #####  ', ' ########## ', '############'],
+			];
+			const color = phase === 'day' ? '#ffffff' : phase === 'sunrise' ? '#fff1e8' : '#ffe2d8';
+			// Three clouds at two depths: the near one is bigger and drifts faster.
+			for (let i = 0; i < 3; i++) {
+				const shape = shapes[i % 2];
+				const u = i === 2 ? PX * 2 : PX;
+				const s = sprite(shape[0].length * u, shape.length * u, (g) => {
+					g.fillStyle = color;
+					shape.forEach((row, j) => [...row].forEach((ch, k) => ch === '#' && g.fillRect(k * u, j * u, u, u)));
+				});
+				clouds.push({
+					sprite: s,
+					x: rand() * w,
+					y: region.top * (0.08 + i * 0.28 + rand() * 0.12),
+					speed: i === 2 ? 16 + rand() * 6 : 6 + rand() * 5,
+				});
+			}
+		}
+
+		// Glints on the bay: the shine color by day, window colors after dark.
+		glints = [];
+		for (let x = PX * 2; x < w; x += PX * (4 + Math.floor(rand() * 5))) {
+			glints.push({
+				x: snap(x),
+				y: h - WATER + PX * (1 + Math.floor(rand() * 3)),
+				len: PX * (1 + Math.floor(rand() * 3)),
+				speed: 0.4 + rand() * 0.9,
+				p: rand() * 6.3,
+				color: p.shine || WINDOW_COLORS[Math.floor(rand() * WINDOW_COLORS.length)],
+			});
+		}
+		const firstText = Math.min(...textRects.map((r) => r.y), h);
+		lanes = { top: snap(Math.max(PX * 2, firstText / 2 - PX)), low: snap(h - WATER - PX * 6) };
+		plane = null;
+		nextPlane = performance.now() + 4000;
+
+		birds = [];
+		streaks = [];
+		nextEvent = performance.now() + 2500;
+		hero.style.setProperty('--sun-x', sunX === null ? '50%' : `${((sunX / w) * 100).toFixed(1)}%`);
+	}
+
+	// A pixel disc (or crescent) with a soft glow behind it.
+	function drawBody(t: number) {
+		if (!body) return;
+		const { r, kind, color, glow } = body;
+		const x = body.x;
+		const y = body.y;
+		const pulse = reduceMotion.matches ? 1 : 1 + Math.sin(t / 1500) * 0.06;
+		const gr = glowMax / 1.06; // room for the pulse
+		// Slow-turning rays around the sun, kept inside the glow (off the text).
+		if (kind === 'sun' && gr > r * 1.5) {
+			const spin = reduceMotion.matches ? 0 : t / 9000;
+			ctx.fillStyle = `rgba(${glow}, 0.22)`;
+			ctx.beginPath();
+			for (let i = 0; i < 8; i++) {
+				const a = spin + (i * Math.PI) / 4;
+				ctx.moveTo(x + Math.cos(a - 0.07) * r * 1.3, y + Math.sin(a - 0.07) * r * 1.3);
+				ctx.lineTo(x + Math.cos(a) * gr, y + Math.sin(a) * gr);
+				ctx.lineTo(x + Math.cos(a + 0.07) * r * 1.3, y + Math.sin(a + 0.07) * r * 1.3);
+			}
+			ctx.fill();
+		}
+		if (gr > r) {
+			const g = ctx.createRadialGradient(x, y, r * 0.5, x, y, gr * pulse);
+			g.addColorStop(0, `rgba(${glow}, 0.5)`);
+			g.addColorStop(1, `rgba(${glow}, 0)`);
+			ctx.fillStyle = g;
+			ctx.beginPath();
+			ctx.arc(x, y, gr * pulse, 0, Math.PI * 2);
+			ctx.fill();
+		}
+
+		ctx.fillStyle = color;
+		const n = Math.round(r / PX);
+		for (let j = -n; j <= n; j++)
+			for (let i = -n; i <= n; i++) {
+				if (i * i + j * j > n * n + n * 0.5) continue;
+				if (kind === 'moon') {
+					const bi = i - Math.round(n * 0.55);
+					const bj = j + Math.round(n * 0.25);
+					if (bi * bi + bj * bj <= n * n) continue; // crescent
+				}
+				ctx.fillRect(snap(x) + i * PX, snap(y) + j * PX, PX, PX);
+			}
+	}
+
+	function frame(t: number, dt: number) {
+		const still = reduceMotion.matches;
+		const s = dt / 1000;
+		ctx.clearRect(0, 0, w, h);
+
+
+		// Stars (smooth twinkle)
+		for (const st of stars) {
+			const a = still ? st.a : st.a * (0.55 + 0.45 * Math.sin((t / 1000) * st.speed * Math.PI * 2 + st.p));
+			ctx.fillStyle = `rgba(255, 255, 255, ${a.toFixed(3)})`;
+			ctx.fillRect(Math.round(st.x), Math.round(st.y), st.size, st.size);
+		}
+
+		drawBody(t);
+
+		// Clouds
+		for (const c of clouds) {
+			if (!still) {
+				c.x += c.speed * s;
+				if (c.x > w + 10) c.x = -c.sprite.width / dpr - 10;
+			}
+			ctx.globalAlpha = 0.9;
+			ctx.drawImage(c.sprite, Math.round(c.x), Math.round(c.y), c.sprite.width / dpr, c.sprite.height / dpr);
+			ctx.globalAlpha = 1;
+		}
+
+		// City: far layer, then the near one.
+		if (far) ctx.drawImage(far, 0, 0, w, h);
+		if (near) ctx.drawImage(near, 0, 0, w, h);
+
+		// Windows fade on and off now and then.
+		const lit = (PHASES[phase] ?? PHASES.day).lit;
+		const pal = PHASES[phase] ?? PHASES.day;
+		// In daylight a band of sunlight sweeps diagonally across the windows.
+		const sweep = region.x0 - 60 + (((t / 7000) % 1) * (region.x1 - region.x0 + 160));
+		for (const win of windows) {
+			if (!still) {
+				if (Math.random() < 0.0006) win.target = Math.random() < lit ? 1 : 0;
+				win.level += (win.target - win.level) * Math.min(1, s * 2);
+			}
+			if (LIGHT.includes(phase)) {
+				const d = win.x + (h - win.y) * 0.6 - sweep;
+				const sheen = still ? 0 : Math.exp(-((d / 22) ** 2));
+				ctx.globalAlpha = 0.28 + sheen * 0.65;
+				ctx.fillStyle = pal.shine;
+				ctx.fillRect(win.x, win.y, PX, PX);
+			}
+			if (win.level < 0.02) continue;
+			ctx.globalAlpha = win.level;
+			ctx.fillStyle = win.color;
+			ctx.fillRect(win.x, win.y, PX, PX);
+		}
+		ctx.globalAlpha = 1;
+
+		// The Needle's elevator glides up and down.
+		const ride = still ? 0.5 : (Math.sin(t / 3200) + 1) / 2;
+		const ey = snap(needle.base - PX * 2 - ride * (needle.base - needle.saucer - PX * 4));
+		ctx.fillStyle = DARK.includes(phase) || phase === 'dusk' ? '#ffd27a' : '#ffffff';
+		ctx.fillRect(needle.x - PX / 2, ey, PX, PX);
+
+		// Elliott Bay along the whole bottom: water and glints.
+		ctx.fillStyle = pal.water;
+		ctx.fillRect(0, h - WATER, w, WATER);
+		for (const gl of glints) {
+			const a = still ? 0.5 : Math.max(0, Math.sin((t / 1000) * gl.speed * Math.PI * 2 + gl.p)) ** 2;
+			if (a < 0.03) continue;
+			ctx.globalAlpha = a * 0.9;
+			ctx.fillStyle = gl.color;
+			ctx.fillRect(gl.x, gl.y, gl.len, PX - 1);
+		}
+		ctx.globalAlpha = 1;
+
+		// The Needle's beacon blinks once it's getting dark.
+		if (lit > 0) {
+			const on = still ? 1 : Math.max(0, Math.sin(t / 450));
+			ctx.fillStyle = `rgba(255, 90, 90, ${(0.4 + on * 0.6).toFixed(3)})`;
+			ctx.fillRect(needle.x - PX / 2, needle.y - PX, PX, PX);
+		}
+
+		// Rain, slanting a little, never over text.
+		const rain = (PHASES[phase] ?? PHASES.day).rain;
+		if (rain && !still) {
+			const tilt = 0.18;
+			ctx.strokeStyle = `rgba(${rain}, 0.35)`;
+			ctx.lineWidth = 1;
+			ctx.beginPath();
+			for (const d of drops) {
+				d.y += d.speed * s;
+				d.x += d.speed * s * tilt;
+				if (d.y > h) {
+					d.y = -d.len;
+					d.x = Math.random() * (w + 60) - 60;
+				}
+				if (d.x > w) d.x -= w + 60;
+				const tx = d.x - d.len * tilt;
+				const ty = d.y - d.len;
+				if (onText(d.x, d.y) || onText(tx, ty)) continue;
+				ctx.moveTo(d.x, d.y);
+				ctx.lineTo(tx, ty);
+			}
+			ctx.stroke();
+		}
+
+		// Ambient events: shooting stars in the dark, gulls in the light.
+		if (!still && t > nextEvent) {
+			if (stars.length) {
+				launch(w * (0.4 + Math.random() * 0.55), region.top * Math.random() * 0.4);
+				nextEvent = t + 6000 + Math.random() * 8000;
+			} else {
+				// Gulls glide low along the waterfront.
+				for (let i = 0; i < 3; i++)
+					birds.push({ x: -20 - i * 22, y: lanes.low - (i % 2) * PX * 2, ty: lanes.low - (i % 2) * PX * 2, vx: 60 + Math.random() * 15, flap: i });
+				nextEvent = t + 5000 + Math.random() * 5000;
+			}
+		}
+
+		// By day, a plane crosses now and then, leaving a fading contrail.
+		if (phase === 'day' && !still) {
+			if (!plane && t > nextPlane) plane = { x: -20, y: lanes.top, trail: [] };
+			if (plane) {
+				plane.x += 38 * s;
+				plane.trail.push(plane.x);
+				if (plane.trail.length > 140) plane.trail.shift();
+				plane.trail.forEach((tx, i) => {
+					if (onText(tx, plane!.y + 1)) return;
+					ctx.fillStyle = `rgba(255, 255, 255, ${((i / plane!.trail.length) * 0.7).toFixed(3)})`;
+					ctx.fillRect(tx, plane!.y + 1, 2, 1);
+				});
+				if (!onText(plane.x, plane.y)) {
+					ctx.fillStyle = '#6f87a6';
+					ctx.fillRect(snap(plane.x), plane.y, PX * 3, PX - 1);
+					ctx.fillRect(snap(plane.x) + PX, plane.y - PX + 1, PX, PX * 2 - 1);
+				}
+				if (plane.trail[0] > w) {
+					plane = null;
+					nextPlane = t + 18000 + Math.random() * 14000;
+				}
+			}
+		}
+
+		for (const sk of streaks) {
+			sk.age += dt;
+			sk.x += sk.vx * s;
+			sk.y += sk.vy * s;
+			const fade = Math.sin(Math.min(1, sk.age / sk.life) * Math.PI);
+			const len = 14;
+			for (let k = 0; k < len; k++) {
+				const x = sk.x - (sk.vx / 600) * k * PX;
+				const y = sk.y - (sk.vy / 600) * k * PX;
+				if (onText(x, y)) continue;
+				ctx.fillStyle = `rgba(255, 255, 255, ${(fade * (1 - k / len)).toFixed(3)})`;
+				ctx.fillRect(snap(x), snap(y), PX - 1, PX - 1);
+			}
+		}
+		streaks = streaks.filter((sk) => sk.age < sk.life);
+
+		const birdColor = phase === 'day' ? '#4e6a8a' : '#6b4a5e';
+		for (const b of birds) {
+			b.x += b.vx * s;
+			b.y += (b.ty - b.y) * Math.min(1, s * 1.5); // ease into its lane
+			b.flap += s * 8;
+			if (onText(b.x, b.y)) continue;
+			ctx.fillStyle = birdColor;
+			const up = Math.sin(b.flap) > 0;
+			const bx = snap(b.x);
+			const by = snap(b.y);
+			ctx.fillRect(bx, by, PX, PX); // body
+			ctx.fillRect(bx - PX, by + (up ? -PX : 0), PX, PX); // wings
+			ctx.fillRect(bx + PX, by + (up ? -PX : 0), PX, PX);
+			ctx.fillRect(bx - PX * 2, by + (up ? -PX * 2 : PX), PX, PX);
+			ctx.fillRect(bx + PX * 2, by + (up ? -PX * 2 : PX), PX, PX);
+		}
+		birds = birds.filter((b) => b.x < w + 30 && b.y > -40);
+	}
+
+	// A shooting star (dark phases) or a few birds (light phases) from a point.
+	function launch(x: number, y: number) {
+		if (stars.length || DARK.includes(phase)) {
+			const angle = Math.PI * (0.78 + Math.random() * 0.1);
+			const speed = 600;
+			streaks.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, age: 0, life: 900 });
+		} else {
+			// Fly out the top if nothing's above; otherwise drop to the waterfront lane.
+			const clearAbove = !textRects.some((r) => x + 60 > r.x && x - 60 < r.x + r.w && r.y < y);
+			const clearBelow = !textRects.some((r) => x + 60 > r.x && x - 60 < r.x + r.w && r.y > y && r.y < lanes.low);
+			if (!clearAbove && !clearBelow) return;
+			const ty = clearAbove ? -60 : lanes.low;
+			for (let i = 0; i < 3; i++) {
+				birds.push({ x: x - i * 22, y: y + (i % 2) * 10, ty: ty - (i % 2) * PX * 2, vx: 70 + Math.random() * 15, flap: i });
+			}
+		}
+	}
+
+	function loop(t: number) {
+		if (!running) return;
+		if (t - last < 15) {
+			requestAnimationFrame(loop); // cap at ~60fps on high-refresh screens
+			return;
+		}
+		const dt = Math.min(t - last, 50);
+		last = t;
+		frame(t, dt);
+		requestAnimationFrame(loop);
+	}
+
+	function update() {
+		const shouldRun = visible && !document.hidden && !reduceMotion.matches;
+		if (shouldRun && !running) {
+			running = true;
+			last = performance.now();
+			requestAnimationFrame(loop);
+		} else if (!shouldRun) {
+			running = false;
+			frame(performance.now(), 0);
+		}
+	}
+
+	function setup() {
+		dpr = Math.min(window.devicePixelRatio || 1, 2);
+		w = hero.clientWidth;
+		h = hero.clientHeight;
+		canvas.width = Math.round(w * dpr);
+		canvas.height = Math.round(h * dpr);
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		ctx.imageSmoothingEnabled = false;
+		measureText();
+		findRegion();
+		build();
+		frame(performance.now(), 0);
+	}
+
+	// Click the sky to launch a shooting star or a few birds.
+	hero.addEventListener('click', (e) => {
+		if (reduceMotion.matches || window.getSelection()?.toString()) return;
+		const o = hero.getBoundingClientRect();
+		const x = e.clientX - o.left - hero.clientLeft;
+		const y = e.clientY - o.top - hero.clientTop;
+		if (onText(x, y) || y > region.top) return;
+		launch(x, y);
+	});
+
+	new IntersectionObserver(([entry]) => {
+		visible = entry.isIntersecting;
+		update();
+	}).observe(hero);
+	document.addEventListener('visibilitychange', update);
+	reduceMotion.addEventListener('change', update);
+
+	let resizeTimer: number;
+	new ResizeObserver(() => {
+		clearTimeout(resizeTimer);
+		resizeTimer = window.setTimeout(setup, 150);
+	}).observe(hero);
+
+	new MutationObserver(setup).observe(document.documentElement, {
+		attributes: true,
+		attributeFilter: ['data-phase'],
+	});
+
+	document.fonts.ready.then(() => {
+		setup();
+		update();
+	});
+</script>
