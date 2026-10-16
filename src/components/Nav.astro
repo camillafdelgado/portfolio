@@ -64,8 +64,10 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 
 	function tick() {
 		const now = new Date();
+		const text = format.format(now);
 		clocks.forEach((el) => {
-			el.textContent = format.format(now);
+			if (el.textContent === text) return; // only touch the page when the minute changes
+			el.textContent = text;
 			el.dateTime = now.toISOString();
 		});
 	}

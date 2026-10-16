@@ -1,14 +1,17 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import ProjectCard from '../components/ProjectCard.astro';
+import Sky from '../components/Sky.astro';
 ---
 
-<Layout>
+<Layout timeOfDay>
+	<Sky slot="backdrop" />
 	<main class="container">
+		<!-- The hero card holds the time-of-day sky (colors from sky.css). -->
 		<section class="hero">
 			<h1 class="hero-title">
 				Camilla is a product designer who makes complex systems easy to use.{' '}
-				<span class="muted">Interested in AI, design systems, and fun interactions.</span>
+				<span class="muted-large">AI, design systems, and fun interactions.</span>
 			</h1>
 
 			<dl class="facts">
@@ -62,11 +65,44 @@ import ProjectCard from '../components/ProjectCard.astro';
 </Layout>
 
 <style>
+	/* Hero card — from Figma "home" (182:555). */
 	.hero {
+		position: relative;
+		isolation: isolate;
 		display: flex;
 		flex-direction: column;
-		gap: 24px;
-		padding-top: 140px;
+		gap: 60px;
+		margin-top: 140px;
+		padding: 48px;
+		overflow: hidden;
+		border: 1px solid var(--color-card-border);
+		border-radius: 16px;
+		background: var(--color-card);
+		box-shadow: 0 4px 20px 4px rgb(64 64 64 / 0.05);
+		transition:
+			background-color 3s ease,
+			border-color 3s ease;
+	}
+
+	/* The sky: a warm horizon at the bottom-center fading out to the sky color at
+	   the edges, laid over the card at low strength so text stays readable. */
+	.hero::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		background: radial-gradient(
+			ellipse 59% 84% at 50% 100%,
+			var(--sky-glow) 0%,
+			var(--sky-mid) 50%,
+			var(--sky-top) 100%
+		);
+		opacity: var(--sky-strength);
+		transition:
+			--sky-top 3s ease,
+			--sky-mid 3s ease,
+			--sky-glow 3s ease,
+			opacity 3s ease;
 	}
 
 	.facts {
@@ -95,7 +131,7 @@ import ProjectCard from '../components/ProjectCard.astro';
 		display: flex;
 		flex-direction: column;
 		gap: 120px;
-		padding-block: 120px;
+		padding-block: 80px 120px;
 	}
 
 	/* The companion card shows one phone, centered on its background. */
@@ -108,7 +144,9 @@ import ProjectCard from '../components/ProjectCard.astro';
 
 	@media (max-width: 640px) {
 		.hero {
-			padding-top: 80px;
+			margin-top: 64px;
+			padding: 24px;
+			gap: 32px;
 		}
 		.hero-title {
 			font-size: 28px;
@@ -118,7 +156,7 @@ import ProjectCard from '../components/ProjectCard.astro';
 		}
 		.projects {
 			gap: 64px;
-			padding-block: 80px;
+			padding-block: 64px 80px;
 		}
 	}
 </style>

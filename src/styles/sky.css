@@ -1,0 +1,142 @@
+/* Time-of-day sky colors (homepage only). data-phase is set on <html> by
+   src/scripts/phase.js before first paint. Kept soft and low-intensity. */
+
+/* Registered so the sky can fade smoothly when the phase changes. */
+@property --sky-top {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --sky-mid {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --sky-glow {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --color-bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #f3f4f4;
+}
+@property --color-text {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #404040;
+}
+@property --color-heading {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #1e1a15;
+}
+@property --color-muted {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #6b6b6b;
+}
+@property --color-muted-large {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #8a8a8a;
+}
+
+:root {
+  /* Hero card (light phases). The sky is laid over it at --sky-strength. */
+  --color-card: #ffffff;
+  --color-card-border: #e0e0e0;
+  --sky-strength: 0.24;
+  /* Text colors fade along with the sky when the phase changes. */
+  transition:
+    --color-bg 3s ease,
+    --color-text 3s ease,
+    --color-heading 3s ease,
+    --color-muted 3s ease,
+    --color-muted-large 3s ease;
+}
+
+/* Natural sky, drawn as a dome rising from the hero's bottom edge:
+   --sky-glow is the horizon (deepest), --sky-mid the next ring, --sky-top the
+   outer ring before it fades into the page. Text sits on the pale outer part.
+   Text is checked (WCAG AA) against the card blended with each ring:
+   --color-muted ≥ 4.5:1 (small text), --color-muted-large ≥ 3:1 (large text),
+   main text and headings well above 4.5:1. */
+
+/* Daytime: clear blue */
+:root,
+:root[data-phase="day"] {
+  --sky-top: #c4dcf3;
+  --sky-mid: #8cc1f0;
+  --sky-glow: #4a9cf0;
+  --color-muted: #435565;
+  --color-muted-large: #526f89;
+  --ascii-rgb: 64, 64, 64;
+}
+
+/* Sunrise: apricot horizon, cool blue above */
+:root[data-phase="sunrise"] {
+  --sky-top: #bccbe8;
+  --sky-mid: #f2b48f;
+  --sky-glow: #ff8a3d;
+  --color-muted: #624d41;
+  --color-muted-large: #866350;
+  --ascii-rgb: 64, 64, 64;
+}
+
+/* Sunset: coral horizon, soft blue above */
+:root[data-phase="sunset"] {
+  --sky-top: #bdc9e3;
+  --sky-mid: #de9972;
+  --sky-glow: #ff6a00;
+  --color-muted: #59433b;
+  --color-muted-large: #7c584b;
+  --ascii-rgb: 64, 64, 64;
+}
+
+/* Dusk (after sunset): violet horizon, pink afterglow above */
+:root[data-phase="dusk"] {
+  --sky-top: #c8c3e6;
+  --sky-mid: #c890c8;
+  --sky-glow: #8f6ee8;
+  --color-muted: #444162;
+  --color-muted-large: #5b568f;
+  --ascii-rgb: 64, 64, 64;
+}
+
+/* Pre-dawn and night switch the page to light-on-dark: a neutral near-black
+   background (the color stays in the sky), light grays, a lightened pink.
+   Checked against the lightest part of each sky behind text (AA). */
+:root[data-phase="predawn"],
+:root[data-phase="night"] {
+  --color-bg: #121316;
+  --color-text: #d4d5da;
+  --color-heading: #f3f3f5;
+  --color-accent: #e3a6c2;
+  --color-surface: #1f2126;
+  --color-border: #2e3036;
+  --color-card: #191b20;
+  --color-card-border: #2a2d34;
+  --sky-strength: 0.45;
+  --ascii-rgb: 222, 224, 238;
+  color-scheme: dark;
+}
+
+/* Pre-dawn: mauve horizon under deep blue */
+:root[data-phase="predawn"] {
+  --sky-top: #1f2547;
+  --sky-mid: #4a4f8f;
+  --sky-glow: #8a6a9c;
+  --color-muted: #b4b8c8;
+  --color-muted-large: #959bb1;
+}
+
+/* Night: indigo horizon, deep navy */
+:root[data-phase="night"] {
+  --sky-top: #151a38;
+  --sky-mid: #222b66;
+  --sky-glow: #3b4fb0;
+  --color-muted: #a9adbf;
+  --color-muted-large: #8a90a8;
+}
