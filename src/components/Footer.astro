@@ -1,0 +1,111 @@
+---
+/**
+ * Site footer (every page): sign-off with a pixel heart, links, and the
+ * © line with the month/year this build was made.
+ */
+const links = [
+	{ label: 'LinkedIn', href: 'https://www.linkedin.com/in/camilladelgado/' },
+	{ label: 'Email', href: 'mailto:camidel@uw.edu' },
+	{ label: 'Resume', href: 'https://drive.google.com/file/d/1kOM3oj4jShSANyLl8X3gvEBGiuSP5gpV/view?usp=sharing' },
+];
+
+const now = new Date();
+const updated = `${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+
+// 7×6 pixel heart
+const HEART = [' ## ## ', '#######', '#######', ' ##### ', '  ###  ', '   #   '];
+const heart = HEART.flatMap((row, y) => [...row].flatMap((ch, x) => (ch === '#' ? [{ x, y }] : [])));
+---
+
+<footer class="footer container">
+	<div class="row">
+		<p class="signoff">
+			Designed with
+			<svg class="heart" viewBox="0 0 7 6" width="14" height="12" role="img" aria-label="love">
+				{heart.map(({ x, y }) => <rect x={x} y={y} width="1" height="1" />)}
+			</svg>
+			and lots of coffee :)
+		</p>
+
+		<ul class="links">
+			{
+				links.map(({ label, href }) => (
+					<li>
+						<a href={href} {...(href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : {})}>
+							{label}
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+
+	<p class="muted">© Camilla Delgado → updated {updated}</p>
+</footer>
+
+<style>
+	/* Same type as the nav: body text, the © line muted like "Local time". */
+	.footer {
+		font-size: 16px;
+		line-height: 1.3;
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		padding-block: 24px 48px;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.row {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		align-items: center;
+		gap: 12px 24px;
+	}
+
+	.signoff {
+		display: flex;
+		align-items: center;
+		gap: 0.35em;
+	}
+
+	.heart {
+		fill: var(--color-accent);
+		shape-rendering: crispEdges;
+	}
+
+	.links {
+		display: flex;
+		gap: 8px;
+		margin: 0 -8px 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	/* Same pill-on-hover as the nav links. */
+	.links a {
+		display: block;
+		padding: 4px 8px;
+		border: 1px solid transparent;
+		border-radius: 16px;
+		transition:
+			background-color 0.2s ease,
+			border-color 0.2s ease;
+	}
+
+	.links a:hover {
+		background: var(--color-surface);
+		border-color: var(--color-border);
+	}
+
+	.links a:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
+	}
+
+	@media (max-width: 640px) {
+		.links {
+			margin-left: -8px;
+		}
+	}
+</style>
