@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>211 Search Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ──────────────────────────────────────────────────────────────
+   DESIGN TOKENS — tweak colors / sizes here
+   ────────────────────────────────────────────────────────────── */
+:root {
+  --frame-bg: #1d54a1;          /* blue cover background (from Figma) */
+  --card-border: #3d8eff;       /* screenshot card stroke (from Figma) */
+  --accent: #3d8eff;            /* focus rings, ripples */
+  --alert: #ff6b5e;             /* "no results" highlight ring */
+  --page-bg: #0f1115;
+  --ui-text: #e8eaf0;
+  --ui-muted: #8b91a1;
+  --ui-surface: #1a1d24;
+  --ui-border: #2a2f3a;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page-bg);
+  color: var(--ui-text);
+  font-family: Inter, system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 20px; padding: 24px 16px;
+}
+
+/* ── Stage: matches the 932×450 Figma frame ── */
+.stage {
+  width: min(1200px, 100%);
+  aspect-ratio: 932 / 450;
+  background: var(--frame-bg);
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+}
+/* Card: 735.68×356 centered, like the Figma screenshot rectangle */
+.card {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: calc(735.68 / 932 * 100%);
+  aspect-ratio: 735.68 / 356;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  box-shadow: 0 0 2px rgba(0,0,0,.08), 0 10px 6px rgba(0,0,0,.1), 0 30px 60px rgba(0,0,0,.25);
+  overflow: hidden;
+  background: #fff;
+  container-type: inline-size;   /* lets children size with cqw */
+}
+.camera { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
+
+/* Each scene = one screenshot. Overlays inside .shot are positioned
+   in % of the IMAGE, so hotspot numbers in CONFIG map 1:1 to the PNG. */
+.scene { position: absolute; inset: 0; opacity: 0; }
+.shot { position: absolute; left: 0; width: 100%; container-type: inline-size; }
+.shot > img.base { display: block; width: 100%; height: auto; user-select: none; }
+.layer { position: absolute; inset: 0; width: 100%; height: auto; display: block; }
+
+/* Overlays */
+.ov { position: absolute; pointer-events: none; }
+.focus-ring {
+  border: 2px solid var(--accent);
+  border-radius: .35cqw;
+  box-shadow: 0 0 0 .4cqw rgba(61,142,255,.25);
+  opacity: 0;
+}
+.type-mask { background: #fff; display: flex; align-items: center; }
+.typed {
+  font-family: "Open Sans", sans-serif;
+  font-size: .86cqw;
+  color: #1b1b1b;
+  white-space: pre;
+}
+.caret {
+  display: inline-block; width: 1px; height: 1.05cqw;
+  background: #1b1b1b; margin-left: .05cqw; vertical-align: middle;
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+.press { background: rgba(0,0,0,.28); border-radius: .3cqw; opacity: 0; }
+.alert-ring {
+  border: 2px solid var(--alert);
+  border-radius: .5cqw;
+  box-shadow: 0 0 0 .6cqw rgba(255,107,94,.18);
+  opacity: 0;
+}
+.chip {
+  font: 600 .8cqw/1 Inter, sans-serif;
+  background: var(--alert); color: #fff;
+  padding: .45cqw .7cqw; border-radius: 99px;
+  white-space: nowrap; opacity: 0;
+  box-shadow: 0 .3cqw 1cqw rgba(0,0,0,.18);
+}
+.skeleton { position: absolute; inset: 0; background: #f2f4f8; }
+.loader {
+  position: absolute; left: 0; top: 0; height: 3px; width: 100%;
+  background: var(--accent); transform-origin: 0 50%; transform: scaleX(0);
+  z-index: 5;
+}
+
+/* Cursor + click ripple live in card space (inside .camera) */
+.cursor {
+  position: absolute; left: 0; top: 0;
+  width: 2.4cqw; height: auto;
+  transform-origin: 0 0; z-index: 10;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.35));
+}
+.ripple {
+  position: absolute; width: 3cqw; aspect-ratio: 1; border-radius: 50%;
+  border: 2px solid var(--accent); background: rgba(61,142,255,.2);
+  transform: translate(-50%, -50%) scale(0); opacity: 0; z-index: 9;
+}
+
+/* Debug: ?debug in the URL outlines every hotspot */
+body.debug .ov { outline: 1px dashed magenta; opacity: 1 !important; }
+
+/* ── Controls ── */
+.steps { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.step {
+  font-size: 13px; color: var(--ui-muted);
+  padding: 6px 12px; border-radius: 99px;
+  border: 1px solid var(--ui-border);
+  transition: color .3s, border-color .3s, background .3s;
+}
+.step b { font-weight: 600; margin-right: 6px; }
+.step.active { color: var(--ui-text); border-color: var(--card-border); background: rgba(61,142,255,.12); }
+.controls {
+  width: min(1200px, 100%);
+  display: flex; align-items: center; gap: 12px;
+  background: var(--ui-surface); border: 1px solid var(--ui-border);
+  border-radius: 10px; padding: 8px 12px;
+}
+.controls button, .controls select {
+  background: transparent; color: var(--ui-text);
+  border: 1px solid var(--ui-border); border-radius: 6px;
+  font: 500 13px Inter, sans-serif; padding: 6px 10px; cursor: pointer;
+}
+.controls button:hover { border-color: var(--card-border); }
+.controls input[type=range] { flex: 1; accent-color: var(--card-border); min-width: 0; }
+.time { font: 12px ui-monospace, monospace; color: var(--ui-muted); min-width: 84px; text-align: right; }
+.hint { font-size: 12px; color: var(--ui-muted); }
+body.clean .steps, body.clean .controls, body.clean .hint { display: none; }
+body.clean .stage { border-radius: 0; }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+  <div class="card" id="card">
+    <div class="loader" id="loader"></div>
+    <div class="camera" id="camera">
+
+      <!-- SCENE 1 — Home -->
+      <section class="scene" id="s1">
+        <div class="shot" data-img="assets/01-home.jpg">
+          <img class="base" src="assets/01-home.jpg" alt="211 Washington home page">
+          <div class="ov focus-ring" data-box="home.input"></div>
+        </div>
+      </section>
+
+      <!-- SCENE 2 — Search page -->
+      <section class="scene" id="s2">
+        <div class="shot" data-img="assets/02-search.png">
+          <img class="base" src="assets/02-search.png" alt="Search page with suggestions">
+          <div class="ov type-mask" data-box="search.textArea">
+            <span class="typed" id="typed"></span><span class="caret" id="caret"></span>
+          </div>
+          <div class="ov press" data-box="search.button"></div>
+        </div>
+      </section>
+
+      <!-- SCENE 3 — No results (layers are generated from CONFIG.results.layers) -->
+      <section class="scene" id="s3">
+        <div class="skeleton"></div>
+        <div class="shot" data-img="assets/03-no-results.jpg" id="s3shot">
+          <img class="base" src="assets/03-no-results.jpg" alt="No results page" style="visibility:hidden">
+          <div class="ov alert-ring" data-box="results.emptyCard"></div>
+          <div class="ov chip" id="chip"></div>
+        </div>
+      </section>
+
+      <svg class="cursor" id="cursor" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 3l14 8.2-6.3 1.4 3.7 7.1-2.6 1.3-3.7-7.1L5 18.5z" fill="#111" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+      <div class="ripple" id="ripple"></div>
+    </div>
+  </div>
+</div>
+
+<div class="steps" id="steps"></div>
+
+<div class="controls">
+  <button id="play">Pause</button>
+  <button id="restart">Restart</button>
+  <input type="range" id="scrub" min="0" max="1000" value="0" aria-label="Timeline">
+  <span class="time" id="time">0.00s</span>
+  <select id="speed" aria-label="Speed">
+    <option value="0.5">0.5×</option>
+    <option value="1" selected>1×</option>
+    <option value="1.5">1.5×</option>
+  </select>
+</div>
+<p class="hint">Space = play/pause · ←/→ = nudge · add <code>?debug</code> to see hotspots · <code>?clean</code> hides controls for screen recording</p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════════════
+   CONFIG — everything you'd want to tweak lives here.
+   Boxes are [left, top, width, height] in % of that screenshot.
+   Points are [x, y] in % of that screenshot.
+   ══════════════════════════════════════════════════════════════ */
+const CONFIG = {
+  query: "shelter/housing/roommate",
+  typing: { perChar: 0.05, jitter: 0.035 },   // seconds
+  loop: true,
+  loopDelay: 0.8,
+
+  // Card aspect is fixed by the Figma frame; each image may be slightly
+  // taller and offset (topPct) exactly as it was cropped in Figma.
+  cardAspect: 735.68 / 356,
+
+  home: {
+    topPct: 0,
+    input:  [34.15, 35.6, 31.55, 5.3],
+    click:  [50, 38.2],
+  },
+  search: {
+    topPct: -1.75,
+    input:    [35.95, 26.4, 27.75, 4.7],   // full search box (used for the morph)
+    textArea: [37.8, 26.7, 25.65, 4.1],
+    caretAt:  [38.2, 28.7],
+    button:   [59.4, 19.65, 4.35, 4.35],
+    click:    [61.5, 21.8],
+  },
+  results: {
+    topPct: 0,
+    emptyCard: [24.35, 23.25, 36.65, 42.4],
+    chipAt:    [51.5, 21.2],             // where the "0 matches" chip sits
+    chipText:  "0 relevant matches",
+    // Revealed in this order, staggered
+    layers: [
+      { name: "header",  box: [0, 0, 100, 14.2] },
+      { name: "search",  box: [0, 14.2, 24, 12] },
+      { name: "toolbar", box: [24, 14.2, 38, 9] },
+      { name: "empty",   box: [24, 23.2, 38, 44] },
+      { name: "filters", box: [0, 26.2, 24, 73.8] },
+      { name: "list",    box: [24, 67.2, 38, 32.8] },
+      { name: "map",     box: [62, 14.2, 38, 85.8] },
+    ],
+  },
+
+  // Camera framing: s = zoom, [x,y] = focus point in % of the CARD
+  camera: {
+    wide:        { s: 1,   at: [50, 50] },
+    homeInput:   { s: 1.45, at: [50, 38] },
+    typing:      { s: 2.3, at: [50, 28] },   // s = how big the bar is while typing (focus auto-centers on the bar)
+    searchBtn:   { s: 1.35, at: [50, 37] },
+    emptyState:  { s: 1.75, at: [43, 45] },
+  },
+};
+
+/* ──────────────────────────────────────────────────────────────
+   Setup (you shouldn't need to edit below unless changing the story)
+   ────────────────────────────────────────────────────────────── */
+const $ = (s, r = document) => r.querySelector(s);
+const params = new URLSearchParams(location.search);
+if (params.has("debug")) document.body.classList.add("debug");
+if (params.has("clean")) document.body.classList.add("clean");
+
+const get = path => path.split(".").reduce((o, k) => o[k], CONFIG);
+const place = (el, [l, t, w, h]) => Object.assign(el.style, { left: l + "%", top: t + "%", width: w + "%", height: h + "%" });
+
+// Position each scene's image using its Figma crop offset
+const sceneKeys = { s1: "home", s2: "search", s3: "results" };
+for (const [id, key] of Object.entries(sceneKeys)) {
+  $(`#${id} .shot`).style.top = CONFIG[key].topPct + "%";
+}
+document.querySelectorAll("[data-box]").forEach(el => place(el, get(el.dataset.box)));
+
+// Scene 3 reveal layers: copies of the screenshot, each clipped to a region
+const s3shot = $("#s3shot");
+const layerEls = CONFIG.results.layers.map(({ box: [l, t, w, h] }) => {
+  const img = document.createElement("img");
+  img.src = "assets/03-no-results.jpg"; img.className = "layer"; img.alt = "";
+  img.style.clipPath = `inset(${t}% ${100 - l - w}% ${100 - t - h}% ${l}%)`;
+  s3shot.insertBefore(img, s3shot.querySelector(".ov"));
+  return img;
+});
+const chip = $("#chip");
+chip.textContent = CONFIG.results.chipText;
+Object.assign(chip.style, { left: CONFIG.results.chipAt[0] + "%", top: CONFIG.results.chipAt[1] + "%", transform: "translate(-50%,-50%)" });
+
+// Convert a point in % of an image → % of the card
+const imgAspect = {};
+function toCard(sceneKey, [x, y]) {
+  const ratio = CONFIG.cardAspect / (imgAspect[sceneKey] || CONFIG.cardAspect);
+  return [x, CONFIG[sceneKey].topPct + y * ratio];
+}
+function boxToCard(sceneKey, [l, t, w, h]) {
+  const ratio = CONFIG.cardAspect / (imgAspect[sceneKey] || CONFIG.cardAspect);
+  return [l, CONFIG[sceneKey].topPct + t * ratio, w, h * ratio];
+}
+
+/* ── Render state driven by the timeline ── */
+const state = { camS: 1, camX: 50, camY: 50, curX: 85, curY: 90, curScale: 1, chars: 0 };
+const camera = $("#camera"), cursor = $("#cursor"), typed = $("#typed"), caretEl = $("#caret");
+
+function render() {
+  const s = state.camS, clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const tx = clamp(50 - state.camX * s, 100 - 100 * s, 0);
+  const ty = clamp(50 - state.camY * s, 100 - 100 * s, 0);
+  camera.style.transform = `translate(${tx}%, ${ty}%) scale(${s})`;
+  // cursor stays the same on-screen size regardless of zoom
+  cursor.style.left = state.curX + "%";
+  cursor.style.top = state.curY + "%";
+  cursor.style.transform = `scale(${state.curScale / s})`;
+  typed.textContent = CONFIG.query.slice(0, Math.round(state.chars));
+  caretEl.style.width = 1 / (s * gsap.getProperty("#s2", "scale")) + "px";   // stays exactly 1px on screen at any zoom
+}
+
+/* ── Build the timeline ── */
+let tl;
+function build() {
+  const C = CONFIG, cam = C.camera;
+  const homeClick = toCard("home", C.home.click);
+  const caret = toCard("search", C.search.caretAt);
+  const btn = toCard("search", C.search.click);
+  const shotTo = name => ({ camS: cam[name].s, camX: cam[name].at[0], camY: cam[name].at[1] });
+
+  tl = gsap.timeline({
+    paused: true, repeat: C.loop ? -1 : 0, repeatDelay: C.loopDelay,
+    onUpdate: () => { render(); syncUI(); },
+  });
+
+  // Reset (so scrubbing back to 0 always looks right)
+  tl.set(state, { camS: 1, camX: 50, camY: 50, curX: 82, curY: 96, curScale: 1, chars: 0 }, 0)
+    .set("#s1", { opacity: 1, scale: 1, filter: "blur(0px)" }, 0)
+    .set(["#s2", "#s3"], { opacity: 0 }, 0)
+    .set("#s2", { scale: 1, xPercent: 0, yPercent: 0, filter: "blur(0px)" }, 0)
+    .set(".focus-ring, .press, .alert-ring, .chip", { opacity: 0 }, 0)
+    .set(layerEls, { opacity: 0, y: 14 }, 0)
+    .set("#loader", { scaleX: 0, opacity: 1 }, 0)
+    .set("#cursor", { opacity: 1 }, 0)
+    .set("#caret", { opacity: 0 }, 0);
+
+  // ─ Step 1: land on home, move to search field ─
+  tl.addLabel("home", 0)
+    .to(state, { curX: homeClick[0], curY: homeClick[1], duration: 1.1, ease: "power3.inOut" }, 0.2)
+    .to(state, { ...shotTo("homeInput"), duration: 1.0, ease: "power2.inOut" }, 0.3);
+  const homeClickAt = 1.35;
+  click(tl, homeClick, homeClickAt);
+  tl.to(".focus-ring", { opacity: 1, duration: .25 }, homeClickAt + .05);
+
+  // ─ Step 2: search page opens, type the query ─
+  // Shared-element morph: the search page starts transformed so its input sits
+  // exactly on top of the home input, fades in, then settles into place while
+  // the camera follows — the search bar never visibly jumps.
+  const homeBox = boxToCard("home", C.home.input);
+  const searchBox = boxToCard("search", C.search.input);
+  const center = ([l, t, w, h]) => [l + w / 2, t + h / 2];
+  const [hx, hy] = center(homeBox), [sx, sy] = center(searchBox);
+  // Right after the click, the search page fades in on top with its bar
+  // aligned to the home bar, and the zoom continues from where step 1 stopped
+  // (one push-in, carried across both pages). When it finishes we swap to the
+  // real typing framing in one frame — both framings map the bar to the same
+  // pixels, so nothing visibly moves.
+  const k = homeBox[2] / searchBox[2];
+  const m = homeClickAt + .5;  // pause on the clicked bar, then switch to the search page
+  const zoomDur = .9;    // second half of the zoom, on the search page
+  tl.to(state, { curScale: 0, duration: .2, ease: "power2.in" }, m - .1)           // hide cursor
+    .addLabel("type", m)
+    .set("#s2", { opacity: 0, scale: k, xPercent: hx - sx, yPercent: hy - sy, transformOrigin: `${sx}% ${sy}%` }, m - .01)
+    .to("#s2", { opacity: 1, duration: .3, ease: "power1.out" }, m)
+    .to(state, { camS: cam.typing.s / k, camX: hx, camY: hy, duration: zoomDur, ease: "sine.inOut" }, m)
+    .set("#s1", { opacity: 0 }, m + .3)
+    .set("#caret", { opacity: 1 }, m + .3)
+    .set(state, { curX: caret[0] + 1, curY: caret[1] + 2.5 }, m + .3)
+    .set("#s2", { scale: 1, xPercent: 0, yPercent: 0 }, m + zoomDur)
+    .set(state, { camS: cam.typing.s, camX: sx, camY: sy }, m + zoomDur);
+
+  let t = m + .55;   // typing starts while the zoom is still settling
+  for (let i = 1; i <= C.query.length; i++) {
+    t += C.typing.perChar + (Math.sin(i * 12.9898) * 0.5 + 0.5) * C.typing.jitter; // deterministic jitter
+    tl.set(state, { chars: i }, t);
+  }
+  t += 0.3;
+
+  // ─ Step 3: hit Search ─
+  tl.addLabel("submit", t)
+    .to(state, { ...shotTo("searchBtn"), duration: .7, ease: "power3.inOut" }, t)
+    .set(state, { curX: btn[0] - 6, curY: btn[1] + 9 }, t)
+    .to(state, { curScale: 1, duration: .2 }, t + .05)
+    .to(state, { curX: btn[0], curY: btn[1], duration: .6, ease: "power3.inOut" }, t + .05);
+  click(tl, btn, t + .7);
+  tl.to(".press", { opacity: 1, duration: .08 }, t + .7)
+    .to(".press", { opacity: 0, duration: .2 }, t + .85);
+  t += 1.0;
+
+  // ─ Step 4: loading → no results ─
+  tl.addLabel("results", t)
+    .to("#loader", { scaleX: .85, duration: .5, ease: "power2.out" }, t)
+    .to(state, { ...shotTo("wide"), duration: .8, ease: "power3.inOut" }, t)
+    .to("#s2", { opacity: 0, filter: "blur(3px)", duration: .35 }, t + .2)
+    .set("#s3", { opacity: 1 }, t + .2)
+    .to("#loader", { scaleX: 1, duration: .15 }, t + .5)
+    .to("#loader", { opacity: 0, duration: .25 }, t + .65)
+    .to(layerEls, { opacity: 1, y: 0, duration: .45, ease: "power3.out", stagger: .06 }, t + .3)
+    .to(state, { curX: 90, curY: 96, duration: .8, ease: "power2.inOut" }, t + .3)
+    .to("#cursor", { opacity: 0, duration: .25 }, t + .7);
+  t += 1.2;
+
+  // ─ Step 5: zoom into the dead end ─
+  tl.addLabel("empty", t)
+    .to(state, { ...shotTo("emptyState"), duration: 1.0, ease: "power3.inOut" }, t)
+    .to(".alert-ring", { opacity: 1, duration: .3 }, t + .8)
+    .fromTo(".alert-ring", { scale: 1.06 }, { scale: 1, duration: .5, ease: "back.out(2)" }, t + .8)
+    .fromTo("#chip", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: .35, ease: "back.out(2)" }, t + 1.0)
+    .to({}, { duration: 1.05 }, t + 1.35)                     // hold
+    .to(".alert-ring, #chip", { opacity: 0, duration: .3 }, t + 2.4)
+    .to(state, { ...shotTo("wide"), duration: .8, ease: "power3.inOut" }, t + 2.4)
+    .to("#s3", { opacity: 0, duration: .4 }, t + 3.1)
+    .to("#s1", { opacity: 1, scale: 1, filter: "blur(0px)", duration: .4 }, t + 3.1);
+}
+
+function click(tl, [x, y], at) {
+  tl.to(state, { curScale: .82, duration: .1, ease: "power2.in" }, at)
+    .to(state, { curScale: 1, duration: .2, ease: "back.out(3)" }, at + .1)
+    .set("#ripple", { left: x + "%", top: y + "%" }, at)
+    .fromTo("#ripple", { scale: 0, opacity: .9 }, { scale: 1.6, opacity: 0, duration: .55, ease: "power2.out" }, at);
+}
+
+/* ── UI: steps, scrubber, play/pause ── */
+const STEPS = [
+  ["home", "Land on 211"],
+  ["type", "Type the query"],
+  ["submit", "Hit search"],
+  ["results", "Results load"],
+  ["empty", "No results"],
+];
+$("#steps").innerHTML = STEPS.map(([k, label], i) => `<button class="step" data-k="${k}"><b>${i + 1}</b>${label}</button>`).join("");
+const stepEls = [...document.querySelectorAll(".step")];
+stepEls.forEach(el => el.addEventListener("click", () => { tl.seek(el.dataset.k); }));
+stepEls.forEach(el => Object.assign(el.style, { background: "transparent", cursor: "pointer", font: "inherit" }));
+
+const scrub = $("#scrub"), timeEl = $("#time"), playBtn = $("#play");
+let scrubbing = false;
+function syncUI() {
+  const now = tl.time();
+  if (!scrubbing) scrub.value = Math.round((now / tl.duration()) * 1000);
+  timeEl.textContent = `${now.toFixed(2)}s / ${tl.duration().toFixed(1)}s`;
+  let active = 0;
+  STEPS.forEach(([k], i) => { if (now >= tl.labels[k] - 0.01) active = i; });
+  stepEls.forEach((el, i) => el.classList.toggle("active", i === active));
+}
+scrub.addEventListener("input", () => { scrubbing = true; tl.pause(); tl.time((scrub.value / 1000) * tl.duration()); playBtn.textContent = "Play"; });
+scrub.addEventListener("change", () => { scrubbing = false; });
+playBtn.addEventListener("click", toggle);
+$("#restart").addEventListener("click", () => { tl.restart(); playBtn.textContent = "Pause"; });
+$("#speed").addEventListener("change", e => tl.timeScale(+e.target.value));
+function toggle() { tl.paused() ? tl.play() : tl.pause(); playBtn.textContent = tl.paused() ? "Play" : "Pause"; }
+addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" && e.target.type !== "range") return;
+  if (e.code === "Space") { e.preventDefault(); toggle(); }
+  if (e.code === "ArrowRight") { tl.pause(); tl.time(Math.min(tl.duration(), tl.time() + .1)); playBtn.textContent = "Play"; }
+  if (e.code === "ArrowLeft")  { tl.pause(); tl.time(Math.max(0, tl.time() - .1)); playBtn.textContent = "Play"; }
+});
+
+/* ── Go: wait for images so aspect ratios are known ── */
+const imgs = [...document.querySelectorAll(".shot > img.base")];
+Promise.all(imgs.map(i => i.decode().catch(() => {}))).then(() => {
+  imgs.forEach((img, i) => { imgAspect[Object.values(sceneKeys)[i]] = img.naturalWidth / img.naturalHeight; });
+  build();
+  render();
+  tl.play();
+});
+</script>
+</body>
+</html>

@@ -22,3 +22,8 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# local notes (from the original portfolio repo)
+field-notes/
+CLAUDE.md
+/components/
