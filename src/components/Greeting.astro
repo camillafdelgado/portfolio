@@ -1,0 +1,186 @@
+---
+/**
+ * About page greeting that switches language.
+ * Mouse: each hover moves to the next language. Touch (phones/tablets): cycles
+ * on its own after a short delay while on screen; a tap also advances.
+ * Letters fade and slide in one after another. Reduced motion: no auto-cycle
+ * and no letter animation. Screen readers always get the English greeting.
+ */
+const GREETINGS = [
+	{ code: 'EN', lang: 'en', lines: ['Hi, I’m Camilla.', 'I’m so happy to meet you!'] },
+	{ code: 'ES', lang: 'es', lines: ['Hola, soy Camilla.', '¡Qué gusto conocerte!'] },
+	{ code: 'PT', lang: 'pt', lines: ['Oi, eu sou a Camilla.', 'Que bom te conhecer!'] },
+];
+---
+
+<div class="greeting" data-greeting>
+	<h1 class="hero-title">
+		<span class="sr-only">{GREETINGS[0].lines.join(' ')}</span>
+		<span class="variants" aria-hidden="true">
+			{
+				GREETINGS.map((g, v) => {
+					let n = 0;
+					return (
+						<span class:list={['variant', { 'is-active': v === 0 }]} lang={g.lang} data-variant>
+							{g.lines.map((line) => (
+								<span class="line">
+									{line.split(' ').map((word, w) => (
+										<>
+											{w > 0 && ' '}
+											<span class="word">
+												{[...word].map((ch) => (
+													<span class="ch" style={`--i: ${n++}`}>
+														{ch}
+													</span>
+												))}
+											</span>
+										</>
+									))}
+								</span>
+							))}
+						</span>
+					);
+				})
+			}
+		</span>
+	</h1>
+	<p class="code" aria-hidden="true">
+		{GREETINGS.map((g, v) => <span class:list={['code-item', { 'is-active': v === 0 }]}>{g.code}</span>)}
+	</p>
+</div>
+
+<style>
+	.greeting {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		cursor: default;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	/* All languages sit in the same spot, so the height never jumps. */
+	.variants {
+		display: grid;
+	}
+
+	.variant {
+		grid-area: 1 / 1;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.line {
+		display: block;
+	}
+
+	/* Letters animate one by one, but lines only wrap between words. */
+	.word {
+		display: inline-block;
+		white-space: nowrap;
+	}
+
+	.ch {
+		display: inline-block;
+		opacity: 0;
+		transform: translateY(0.35em);
+		transition:
+			opacity 0.35s ease,
+			transform 0.35s ease;
+	}
+
+	.variant.is-active .ch {
+		opacity: 1;
+		transform: none;
+		transition-delay: calc(var(--i) * 14ms);
+	}
+
+	/* The language tag under the greeting. */
+	.code {
+		display: grid;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 500;
+		letter-spacing: 0.08em;
+		color: var(--color-muted);
+	}
+
+	.code-item {
+		grid-area: 1 / 1;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+	}
+
+	.code-item.is-active {
+		opacity: 1;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.ch,
+		.variant.is-active .ch,
+		.code-item {
+			transition: none;
+			transform: none;
+		}
+	}
+</style>
+
+<script>
+	const root = document.querySelector<HTMLElement>('[data-greeting]');
+
+	if (root) {
+		const variants = [...root.querySelectorAll<HTMLElement>('[data-variant]')];
+		const codes = [...root.querySelectorAll<HTMLElement>('.code-item')];
+		const canHover = matchMedia('(hover: hover) and (pointer: fine)');
+		const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+		const FIRST_DELAY = 2500;
+		const EVERY = 3500;
+		let index = 0;
+		let timer: number | undefined;
+		let visible = false;
+
+		function show(i: number) {
+			index = (i + variants.length) % variants.length;
+			variants.forEach((v, k) => v.classList.toggle('is-active', k === index));
+			codes.forEach((c, k) => c.classList.toggle('is-active', k === index));
+		}
+
+		const next = () => show(index + 1);
+
+		// Touch screens: cycle on a timer while the greeting is on screen.
+		function schedule(delay: number) {
+			clearTimeout(timer);
+			if (canHover.matches || reduceMotion.matches || !visible) return;
+			timer = window.setTimeout(() => {
+				next();
+				schedule(EVERY);
+			}, delay);
+		}
+
+		root.addEventListener('mouseenter', () => {
+			if (canHover.matches) next();
+		});
+
+		root.addEventListener('click', () => {
+			if (canHover.matches) return;
+			next();
+			schedule(EVERY);
+		});
+
+		new IntersectionObserver(([entry]) => {
+			visible = entry.isIntersecting;
+			if (visible) schedule(index === 0 ? FIRST_DELAY : EVERY);
+			else clearTimeout(timer);
+		}).observe(root);
+
+		canHover.addEventListener('change', () => schedule(EVERY));
+		reduceMotion.addEventListener('change', () => schedule(EVERY));
+	}
+</script>

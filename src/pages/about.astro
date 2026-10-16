@@ -1,0 +1,282 @@
+---
+import Greeting from '../components/Greeting.astro';
+import Layout from '../layouts/Layout.astro';
+
+// Photos on the "What I'm up to" board: tilt in degrees, and where each sits.
+const photos = [
+	{ src: '/about/photo-tulips.webp', alt: 'Camilla smiling in a field of red tulips', w: 1024, h: 768, tilt: 3, place: 'a' },
+	{ src: '/about/photo-reflection.webp', alt: 'Mount Rainier framed by evergreens, reflected in a still pool', w: 768, h: 1024, tilt: 10, place: 'b' },
+	{ src: '/about/photo-friends.webp', alt: 'A group of friends gathered around a table, smiling and making peace signs', w: 1072, h: 733, tilt: -3, place: 'c' },
+	{ src: '/about/photo-lake.webp', alt: 'A turquoise lake between forested mountains under a cloudy sky', w: 768, h: 1024, tilt: -7, place: 'd' },
+];
+
+const shelves = [
+	{
+		label: 'Reading',
+		source: 'Goodreads',
+		items: [
+			{ title: 'Crónica de una Muerte Anunciada', by: 'Gabriel García Márquez', cover: '/about/book-cronica.webp', href: 'https://www.goodreads.com/review/show/7409992396' },
+			{ title: 'Sunrise on the Reaping', by: 'Suzanne Collins', cover: '/about/book-sunrise-on-the-reaping.webp', href: 'https://www.goodreads.com/review/show/7820646902' },
+			{ title: 'Invisible Women: Data Bias in a World Designed for Men', by: 'Caroline Criado Perez', cover: '/about/book-invisible-women.webp', href: 'https://www.goodreads.com/review/show/7667510443' },
+			{ title: 'Madame Bovary', by: 'Gustave Flaubert', cover: '/about/book-madame-bovary.webp', href: 'https://www.goodreads.com/review/show/7269499506' },
+		],
+	},
+	{
+		label: 'Playing',
+		source: 'Steam · Switch',
+		items: [
+			{ title: 'Hollow Knight: Silksong', by: 'Steam', cover: '/about/game-silksong.jpg', href: 'https://store.steampowered.com/app/1030300' },
+			{ title: 'Tomodachi Life', by: 'Nintendo Switch', cover: '/about/game-tomodachi-life.png', href: 'https://www.nintendo.com/store/products/tomodachi-life-3ds/' },
+			{ title: 'Hollow Knight', by: 'Steam', cover: '/about/game-hollow-knight.png', href: 'https://store.steampowered.com/app/367520' },
+			{ title: 'Split Fiction', by: 'Steam', cover: '/about/game-split-fiction.png', href: 'https://store.steampowered.com/app/2001120' },
+		],
+	},
+];
+---
+
+<Layout title="About — Camilla Delgado">
+	<main class="container about">
+		<Greeting />
+
+		<section class="block" aria-labelledby="perspective">
+			<h2 class="label" id="perspective">My perspective</h2>
+			<div class="prose">
+				<p>
+					I'm a global product designer focused on building accessible and inclusive solutions. Having lived across three
+					countries in America, my cross-cultural perspective helps me design for diverse users and catch accessibility gaps
+					early.
+				</p>
+				<p>
+					I'm especially interested in the intersection of product design and coding: how tools, systems, and code shape
+					designer workflows. I thrive in environments where collaboration, feedback, and continuous learning are part of
+					the process.
+				</p>
+				<p>Outside of design &amp; engineering, I’m:</p>
+				<ul>
+					<li>playing indie games</li>
+					<li>learning about motion design</li>
+					<li>snuggling with my cat</li>
+				</ul>
+			</div>
+		</section>
+
+		<section class="block" aria-labelledby="up-to">
+			<h2 class="label" id="up-to">What I'm up to</h2>
+			<div class="board">
+				{
+					photos.map((p) => (
+						<img
+							class={`photo ${p.place}`}
+							src={p.src}
+							alt={p.alt}
+							width={p.w}
+							height={p.h}
+							loading="lazy"
+							style={`--tilt: ${p.tilt}deg`}
+						/>
+					))
+				}
+			</div>
+		</section>
+
+		<section class="block" aria-labelledby="into">
+			<h2 class="label" id="into">What I'm into</h2>
+			{
+				shelves.map((shelf) => (
+					<div class="shelf">
+						<div class="shelf-head">
+							<h3>{shelf.label}:</h3>
+							<p class="muted">{shelf.source}</p>
+						</div>
+						<ul class="shelf-items">
+							{shelf.items.map((item) => (
+								<li>
+									<a href={item.href} target="_blank" rel="noopener">
+										<img src={item.cover} alt="" width="183" height="276" loading="lazy" />
+										<span class="item-title">{item.title}</span>
+										<span class="item-by muted">{item.by}</span>
+									</a>
+								</li>
+							))}
+						</ul>
+					</div>
+				))
+			}
+		</section>
+	</main>
+</Layout>
+
+<style>
+	.about {
+		display: flex;
+		flex-direction: column;
+		gap: 96px;
+		padding-block: 120px;
+	}
+
+	.block {
+		display: flex;
+		flex-direction: column;
+		gap: 24px;
+	}
+
+	.prose {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		max-width: 680px;
+	}
+
+	.prose ul {
+		margin: 0;
+		padding-left: 22px;
+	}
+
+	/* "What I'm up to": tilted photos on a dotted board. */
+	.board {
+		position: relative;
+		display: grid;
+		grid-template-columns: 1.3fr 1fr;
+		grid-template-areas:
+			'a b'
+			'c d';
+		gap: 56px 64px;
+		padding: 56px;
+		border-radius: 16px;
+		background-color: var(--color-card, #fafafa);
+		background-image: radial-gradient(circle, var(--color-border) 1.5px, transparent 1.6px);
+		background-size: 24px 24px;
+	}
+
+	.photo {
+		width: 100%;
+		height: auto;
+		border-radius: 4px;
+		box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
+		transform: rotate(var(--tilt));
+		transition: transform 0.3s ease;
+	}
+
+	.photo:hover {
+		transform: rotate(0deg) scale(1.03);
+	}
+
+	.a {
+		grid-area: a;
+		max-width: 360px;
+	}
+
+	.b {
+		grid-area: b;
+		max-width: 260px;
+		justify-self: end;
+		margin-top: 120px;
+	}
+
+	.c {
+		grid-area: c;
+		max-width: 380px;
+	}
+
+	.d {
+		grid-area: d;
+		max-width: 230px;
+		justify-self: center;
+	}
+
+	/* "What I'm into": shelves of covers. */
+	.shelf {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+
+	.shelf + .shelf {
+		margin-top: 32px;
+	}
+
+	.shelf-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+	}
+
+	.shelf-head h3 {
+		font-size: 16px;
+		font-weight: 400;
+	}
+
+	.shelf-items {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 24px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.shelf-items a {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		font-size: 14px;
+		line-height: 1.4;
+	}
+
+	.shelf-items img {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 183 / 276;
+		object-fit: cover;
+		margin-bottom: 8px;
+		border-radius: 6px;
+		box-shadow: 0 4px 14px rgb(0 0 0 / 0.1);
+		transition: transform 0.25s ease;
+	}
+
+	.shelf-items a:hover img {
+		transform: translateY(-4px);
+	}
+
+	.shelf-items a:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 4px;
+		border-radius: 6px;
+	}
+
+	.item-title {
+		font-weight: 500;
+		color: var(--color-heading);
+	}
+
+	@media (max-width: 640px) {
+		.about {
+			gap: 64px;
+			padding-block: 80px;
+		}
+
+		.board {
+			grid-template-columns: 1fr 1fr;
+			gap: 32px 24px;
+			padding: 28px;
+		}
+
+		.b {
+			margin-top: 48px;
+		}
+
+		/* Covers scroll sideways on phones. */
+		.shelf-items {
+			grid-template-columns: none;
+			grid-auto-flow: column;
+			grid-auto-columns: 42%;
+			overflow-x: auto;
+			scroll-snap-type: x mandatory;
+			padding-bottom: 8px;
+		}
+
+		.shelf-items li {
+			scroll-snap-align: start;
+		}
+	}
+</style>
