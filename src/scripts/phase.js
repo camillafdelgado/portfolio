@@ -65,6 +65,17 @@
 		try {
 			localStorage.setItem(KEY, v);
 		} catch {}
+		// A menu pick wins over a ?phase= preview link.
+		const url = new URL(location.href);
+		if (url.searchParams.has('phase')) {
+			url.searchParams.delete('phase');
+			history.replaceState(history.state, '', url);
+		}
+		// Switch quickly when chosen (the slow 3s fade is for the sun's own changes).
+		const root = document.documentElement;
+		root.classList.add('theme-switching');
+		clearTimeout(setChoice.timer);
+		setChoice.timer = setTimeout(() => root.classList.remove('theme-switching'), 700);
 		apply();
 	}
 

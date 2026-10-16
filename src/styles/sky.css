@@ -152,3 +152,10 @@
 :root[data-phase="off"] .hero-scene {
   display: none;
 }
+
+/* Picking from the theme menu switches quickly; the sun's own changes fade slowly. */
+:root.theme-switching,
+:root.theme-switching .hero,
+:root.theme-switching .hero::before {
+  transition-duration: 0.5s !important;
+}
