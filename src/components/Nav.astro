@@ -35,9 +35,33 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 
 	<div class="time">
 		<span>Seattle</span>
-		<span class="muted">Local time</span>
+		<time class="muted clock" data-clock>Local time</time>
 	</div>
 </header>
+
+<script>
+	// Live Seattle time, e.g. "12:25 PM". Runs in the browser, so the
+	// "Local time" fallback only shows if JavaScript is off.
+	const format = new Intl.DateTimeFormat('en-US', {
+		timeZone: 'America/Los_Angeles',
+		hour: 'numeric',
+		minute: '2-digit',
+	});
+
+	const clocks = document.querySelectorAll<HTMLTimeElement>('[data-clock]');
+
+	function tick() {
+		const now = new Date();
+		clocks.forEach((el) => {
+			el.textContent = format.format(now);
+			el.dateTime = now.toISOString();
+		});
+	}
+
+	// Checks every second so the minute flips on time.
+	tick();
+	setInterval(tick, 1000);
+</script>
 
 <style>
 	.nav {
@@ -89,6 +113,11 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 		flex-direction: column;
 		gap: 4px;
 		justify-self: end;
+	}
+
+	/* Equal-width digits so the clock doesn't jiggle as the time changes. */
+	.clock {
+		font-variant-numeric: tabular-nums;
 	}
 
 	@media (max-width: 640px) {
