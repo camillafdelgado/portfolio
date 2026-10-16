@@ -1,0 +1,70 @@
+---
+/**
+ * A project on the homepage: a wide media panel, then the title, status
+ * and a meta line underneath. The media slot takes any image or video.
+ */
+interface Props {
+	href: string;
+	title: string;
+	status: string;
+	meta: string[];
+	/** Background behind the media, e.g. when the media doesn't fill the panel. */
+	background?: string;
+}
+
+const { href, title, status, meta, background } = Astro.props;
+---
+
+<a class="card" href={href}>
+	<div class="media" style={background && `background: ${background}`}>
+		<slot />
+	</div>
+	<div class="caption">
+		<h2 class="title">
+			{title} <span class="muted">/ {status}</span>
+		</h2>
+		<p class="meta">{meta.join(' · ')}</p>
+	</div>
+</a>
+
+<style>
+	.card {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+
+	.media {
+		/* Same proportions as the cards on the Framer site (1864×900). */
+		aspect-ratio: 1864 / 900;
+		border-radius: 16px;
+		overflow: hidden;
+	}
+
+	.media :global(img),
+	.media :global(video) {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.title {
+		font-size: 20px;
+		line-height: 1.3;
+	}
+
+	.title .muted {
+		font-weight: 400;
+	}
+
+	.meta {
+		margin-top: 4px;
+	}
+
+	.card:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 4px;
+		border-radius: 16px;
+	}
+</style>

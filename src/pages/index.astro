@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import ProjectCard from '../components/ProjectCard.astro';
 ---
 
 <Layout>
@@ -20,6 +21,42 @@ import Layout from '../layouts/Layout.astro';
 					<dd>WA211, Ogilvy</dd>
 				</div>
 			</dl>
+		</section>
+
+		<section class="projects" aria-label="Projects">
+			<ProjectCard
+				href="/washington-211"
+				title="Improving Washington 211’s search engine"
+				status="Shipped"
+				meta={['UX Design', 'Usability Test', '2026']}
+			>
+				<video
+					src="/projects/wa211.mp4"
+					poster="/projects/wa211-poster.jpg"
+					autoplay
+					muted
+					loop
+					playsinline
+					aria-label="Walkthrough of the Washington 211 search redesign"
+				></video>
+			</ProjectCard>
+
+			<ProjectCard
+				href="/sweet-and-sour"
+				title="AI companion for death and legacy topics"
+				status="Concept"
+				meta={['End-to-End', 'Concept', '2025']}
+				background="#fafaf8"
+			>
+				<img
+					class="phone"
+					src="/projects/companion.gif"
+					alt="Phone screens of the AI companion app"
+					width="688"
+					height="1394"
+					loading="lazy"
+				/>
+			</ProjectCard>
 		</section>
 	</main>
 </Layout>
@@ -54,6 +91,21 @@ import Layout from '../layouts/Layout.astro';
 		margin: 0;
 	}
 
+	.projects {
+		display: flex;
+		flex-direction: column;
+		gap: 120px;
+		padding-block: 120px;
+	}
+
+	/* The companion card shows one phone, centered on its background. */
+	.projects .phone {
+		width: auto;
+		height: 83%;
+		margin: 4% auto 0;
+		border-radius: 12px;
+	}
+
 	@media (max-width: 640px) {
 		.hero {
 			padding-top: 80px;
@@ -63,6 +115,10 @@ import Layout from '../layouts/Layout.astro';
 		}
 		.facts div {
 			min-width: 0;
+		}
+		.projects {
+			gap: 64px;
+			padding-block: 80px;
 		}
 	}
 </style>
