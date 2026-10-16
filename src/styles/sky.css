@@ -140,3 +140,15 @@
   --color-muted: #a9adbf;
   --color-muted-large: #8a90a8;
 }
+
+/* Off (chosen in the theme menu): no time of day — a plain card and the
+   site's normal colors. The scene is hidden too (see HeroScene). */
+:root[data-phase="off"] {
+  --sky-strength: 0;
+  --color-muted: #6b6b6b;
+  --color-muted-large: #8a8a8a;
+}
+
+:root[data-phase="off"] .hero-scene {
+  display: none;
+}

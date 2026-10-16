@@ -607,7 +607,7 @@
 	}
 
 	function update() {
-		const shouldRun = visible && !document.hidden && !reduceMotion.matches;
+		const shouldRun = visible && !document.hidden && !reduceMotion.matches && phase !== 'off';
 		if (shouldRun && !running) {
 			running = true;
 			last = performance.now();
@@ -655,7 +655,10 @@
 		resizeTimer = window.setTimeout(setup, 150);
 	}).observe(hero);
 
-	new MutationObserver(setup).observe(document.documentElement, {
+	new MutationObserver(() => {
+		setup();
+		update();
+	}).observe(document.documentElement, {
 		attributes: true,
 		attributeFilter: ['data-phase'],
 	});

@@ -30,7 +30,7 @@ const { title = 'Camilla Delgado', timeOfDay = false } = Astro.props;
 	</head>
 	<body>
 		<slot name="backdrop" />
-		<Nav />
+		<Nav timeOfDay={timeOfDay} />
 		<slot />
 	</body>
 </html>

@@ -1,4 +1,13 @@
 ---
+import ThemeMenu from './ThemeMenu.astro';
+
+interface Props {
+	/** Homepage only: show the time-of-day theme menu next to the clock. */
+	timeOfDay?: boolean;
+}
+
+const { timeOfDay = false } = Astro.props;
+
 const links = [
 	{ label: 'Work', href: '/' },
 	{ label: 'About', href: '/about' },
@@ -33,9 +42,12 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 		</ul>
 	</nav>
 
-	<div class="time">
-		<span>Seattle</span>
-		<time class="muted clock" data-clock>Local time</time>
+	<div class="right">
+		{timeOfDay && <ThemeMenu />}
+		<div class="time">
+			<span>Seattle</span>
+			<time class="muted clock" data-clock>Local time</time>
+		</div>
 	</div>
 
 	<button
@@ -139,11 +151,18 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 		padding-top: 5px;
 	}
 
+	.right {
+		position: relative; /* anchors the theme dropdown under button + clock */
+		display: flex;
+		align-items: flex-start;
+		gap: 12px;
+		justify-self: end;
+	}
+
 	.time {
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
-		justify-self: end;
 	}
 
 	/* Equal-width digits so the clock doesn't jiggle as the time changes. */

@@ -50,16 +50,37 @@
 		return 'night';
 	}
 
-	// ?phase=dusk forces a phase, for previewing. (The theme menu comes later.)
+	// The visitor's choice from the theme menu: 'auto', 'off' or a phase.
+	// Saved in this browser only; falls back to 'auto' if storage is blocked.
+	const KEY = 'sky-theme';
+	function getChoice() {
+		try {
+			const v = localStorage.getItem(KEY);
+			return v === 'off' || PHASES.includes(v) ? v : 'auto';
+		} catch {
+			return 'auto';
+		}
+	}
+	function setChoice(v) {
+		try {
+			localStorage.setItem(KEY, v);
+		} catch {}
+		apply();
+	}
+
+	// ?phase=dusk forces a phase for previewing (wins over the saved choice).
 	function forcedPhase() {
 		const p = new URLSearchParams(location.search).get('phase');
 		return PHASES.includes(p) ? p : null;
 	}
 
 	function apply() {
-		document.documentElement.dataset.phase = forcedPhase() || phaseAt(new Date());
+		const choice = getChoice();
+		const root = document.documentElement;
+		root.dataset.themeChoice = choice;
+		root.dataset.phase = forcedPhase() || (choice === 'auto' ? phaseAt(new Date()) : choice);
 	}
 
 	apply();
-	window.__sky = { phaseAt, sunTimes, apply, PHASES };
+	window.__sky = { phaseAt, sunTimes, apply, getChoice, setChoice, PHASES };
 })();
