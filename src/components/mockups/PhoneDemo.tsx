@@ -48,6 +48,8 @@ export type Scene = {
 	init: DemoState;
 	script: [number, Partial<DemoState>][];
 	duration: number;
+	/** Optional overrides for the resting frame (paused / reduced motion). */
+	still?: Partial<DemoState>;
 };
 
 export type ScreensProps = { state: DemoState; reduceMotion: boolean };
@@ -65,16 +67,19 @@ interface Props {
 	anchors: Record<string, Point>;
 	hint?: string;
 	phoneWidth?: number;
+	/** Line height of the step descriptions (the original used 160% / 165%). */
+	stepBodyLineHeight?: number;
 }
 
-/** Keystrokes: one state change per character, `step` ms apart. */
-export function typing(start: number, text: string, step: number, from = 0): [number, Partial<DemoState>][] {
-	return Array.from(text.slice(from)).map((_, i) => [start + i * step, { query: text.slice(0, from + i + 1) }]);
+/** Keystrokes: one state change per character, `step` ms apart, into `field`. */
+export function typing(start: number, text: string, step: number, from = 0, field = 'query'): [number, Partial<DemoState>][] {
+	return Array.from(text.slice(from)).map((_, i) => [start + i * step, { [field]: text.slice(0, from + i + 1) }]);
 }
 
 /** Where a scene ends up (shown when paused, offscreen, or reduced motion). */
 function finalState(scene: Scene): DemoState {
-	return scene.script.reduce((s, [, change]) => ({ ...s, ...change }), { ...scene.init, cursorVisible: false });
+	const end = scene.script.reduce((s, [, change]) => ({ ...s, ...change }), { ...scene.init, cursorVisible: false });
+	return scene.still ? { ...end, ...scene.still } : end;
 }
 
 /** Position of an element relative to an ancestor, ignoring the phone's scale. */
@@ -100,6 +105,7 @@ export default function PhoneDemo({
 	anchors,
 	hint = 'Toggle to compare',
 	phoneWidth = 300,
+	stepBodyLineHeight = 1.6,
 }: Props) {
 	const [active, setActive] = useState(0);
 	const [state, setState] = useState<DemoState>(scenes[0].init);
@@ -263,7 +269,9 @@ export default function PhoneDemo({
 											}}
 										>
 											<span style={{ overflow: 'hidden' }}>
-												<span style={{ ...FONTS.stepBody, display: 'block', paddingTop: 4, color: COLORS.body }}>{step.body}</span>
+												<span style={{ ...FONTS.stepBody, lineHeight: stepBodyLineHeight, display: 'block', paddingTop: 4, color: COLORS.body }}>
+													{step.body}
+												</span>
 											</span>
 										</span>
 									</span>

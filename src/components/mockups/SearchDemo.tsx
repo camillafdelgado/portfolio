@@ -84,7 +84,7 @@ const SCENES: Scene[] = [
 ];
 
 /** Washington 211 header bar: logo block, Menu, search button. */
-function TopBar() {
+export function TopBar() {
 	return (
 		<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 16px 0' }}>
 			<div style={{ width: 40, height: 22, borderRadius: 5, background: '#D9D9D9' }} />
@@ -126,7 +126,7 @@ function SearchField({ t, query, focus, placeholder = 'Search for assistance' }:
 	);
 }
 
-function SearchHeader({ t, query, focus, showButton = false }: { t: string; query: string; focus: boolean; showButton?: boolean }) {
+export function SearchHeader({ t, query, focus, showButton = false }: { t: string; query: string; focus: boolean; showButton?: boolean }) {
 	return (
 		<div style={S.pad}>
 			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '28px 0 16px' }}>

@@ -97,6 +97,56 @@ export const Icon = {
 			<path d="M9 4v14M15 6v14" />
 		</svg>
 	),
+	clock: (
+		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={BLUE} strokeWidth="2" strokeLinecap="round">
+			<circle cx="12" cy="12" r="9" />
+			<path d="M12 7v5l3 2" />
+		</svg>
+	),
+	mail: (
+		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.8" strokeLinejoin="round">
+			<rect x="3" y="5" width="18" height="14" rx="2" />
+			<path d="M3 7l9 6 9-6" />
+		</svg>
+	),
+	linkWhite: (
+		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
+			<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1" />
+			<path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1" />
+		</svg>
+	),
+	print: (
+		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.8" strokeLinejoin="round">
+			<path d="M7 9V3h10v6" />
+			<rect x="3" y="9" width="18" height="8" rx="2" />
+			<path d="M7 14h10v7H7z" />
+		</svg>
+	),
+	close: (
+		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={BLUE} strokeWidth="2" strokeLinecap="round">
+			<path d="M6 6l12 12M18 6L6 18" />
+		</svg>
+	),
+	pinDark: (
+		<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinejoin="round">
+			<path d="M12 21s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12z" />
+			<circle cx="12" cy="9" r="2.5" />
+		</svg>
+	),
+	/** Pin with a slash through it (size, stroke color). */
+	pinOff: (size = 20, color = '#333', style?: CSSProperties) => (
+		<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+			<mask id={`pinOffGap${size}`}>
+				<rect width="24" height="24" fill="#fff" />
+				<path d="M3 3l18 18" stroke="#000" strokeWidth="3.6" strokeLinecap="round" />
+			</mask>
+			<g mask={`url(#pinOffGap${size})`}>
+				<path d="M12 21s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12z" />
+				<circle cx="12" cy="9" r="2.5" />
+			</g>
+			<path d="M3 3l18 18" />
+		</svg>
+	),
 	phone: (
 		<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round">
 			<path d="M5 3h4l2 5-2.5 1.5a11 11 0 006 6L16 13l5 2v4a2 2 0 01-2 2A17 17 0 013 5a2 2 0 012-2z" />
