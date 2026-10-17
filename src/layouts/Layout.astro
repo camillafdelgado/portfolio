@@ -11,6 +11,11 @@ interface Props {
 }
 
 const { title = 'Camilla Delgado', timeOfDay = false } = Astro.props;
+
+// LAUNCH: the site is still in testing while camilladelgado.com points at
+// Framer, so search engines are asked not to index it. Set to false when
+// the domain moves here.
+const PRELAUNCH = true;
 ---
 
 <html lang="en">
@@ -26,6 +31,7 @@ const { title = 'Camilla Delgado', timeOfDay = false } = Astro.props;
 			href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Geist:ital,wght@0,400;1,400&display=swap"
 			rel="stylesheet"
 		/>
+		{PRELAUNCH && <meta name="robots" content="noindex, nofollow" />}
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 	</head>
