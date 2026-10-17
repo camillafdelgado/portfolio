@@ -1,8 +1,20 @@
 ---
 /**
  * Shared layout for case-study pages, matched 1:1 to the original Framer
- * pages (measured at 1280px wide): white page, 1035px column, hero video,
- * the details grid, then the story (Markdown/MDX from src/content/work/).
+ * pages (measured at 1280px wide) but on the site's off-white: 1035px column,
+ * hero video, the details grid, then the story (Markdown/MDX from
+ * src/content/work/).
+ *
+ * template: 'concept' is the original's older, narrower page: a 768px column
+ * with a Back button, kicker and intro, the hero image on a colored card, and
+ * 24px / 48px spacing. Its extra blocks:
+ *   <div class="pairs"> h3 p h3 p </div>          two columns of title + text
+ *   <div class="pairs boxed"> … </div>            the same in a gray card
+ *   <div class="panel"> … </div>                  gray band around media; with
+ *        .centered (one image), .videos (phone videos), .findings (5 cards)
+ *   <div class="sketches"> img img </div>         two photos on a dot grid
+ *   <div class="embed"><iframe …></div>           16:9-ish video embed
+ *   <blockquote><p>“…”</p><p class="cite">—…</p></blockquote>
  *
  * HTML blocks used inside the story:
  *   <p class="label">Background</p>              section label (starts a section)
@@ -21,18 +33,46 @@ import Layout from './Layout.astro';
 interface Props {
 	title: string;
 	status: string;
-	hero: { video?: string; poster?: string; image?: string; alt: string };
+	template?: 'default' | 'concept';
+	kicker?: string[];
+	intro?: string;
+	hero: { video?: string; poster?: string; image?: string; background?: string; alt: string };
 	details: { label: string; items: string[] }[];
 }
 
-const { title, status, hero, details } = Astro.props;
+const { title, status, template = 'default', kicker, intro, hero, details } = Astro.props;
+const concept = template === 'concept';
 ---
 
 <Layout title={`${title} — Camilla Delgado`}>
-	<main class="case">
+	<main class:list={['case', { concept }]}>
 		<h1 class="sr-only">{title} ({status})</h1>
 
-		<div class="hero-media">
+		{
+			concept && (
+				<header class="case-head">
+					<a class="back" href="/">
+						<svg width="9" height="7" viewBox="0 0 9 7" fill="none" aria-hidden="true">
+							<path d="M3.5 0.5L0.5 3.5L3.5 6.5M0.5 3.5H8.5" stroke="#8A8A8A" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+						Back
+					</a>
+					{kicker && (
+						<p class="kicker">
+							{kicker.map((k, i) => (
+								<>
+									{i > 0 && <span class="kicker-dot" aria-hidden="true" />}
+									<span>{k}</span>
+								</>
+							))}
+						</p>
+					)}
+					{intro && <p class="intro">{intro}</p>}
+				</header>
+			)
+		}
+
+		<div class="hero-media" style={hero.background ? `background: ${hero.background}` : undefined}>
 			{
 				hero.video ? (
 					<video src={hero.video} poster={hero.poster} autoplay muted loop playsinline aria-label={hero.alt} />
@@ -62,11 +102,6 @@ const { title, status, hero, details } = Astro.props;
 </Layout>
 
 <style>
-	/* Case studies sit on white, like the original pages. */
-	:global(body) {
-		background: #fff;
-	}
-
 	.sr-only {
 		position: absolute;
 		width: 1px;
@@ -388,9 +423,205 @@ const { title, status, hero, details } = Astro.props;
 		min-height: 757px;
 	}
 
+	/* ---------- template: 'concept' (narrow, older original pages) ---------- */
+	.case.concept {
+		width: min(768px, 100% - 2 * var(--gutter));
+	}
+
+	.back {
+		display: flex;
+		width: fit-content;
+		align-items: center;
+		gap: 4px;
+		height: 20px;
+		padding-right: 12px;
+		border-radius: 4px;
+		background: #edecea;
+		font-family: var(--font-mono);
+		font-size: 14px;
+		font-weight: 500;
+		line-height: 1.2;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		text-decoration: none;
+		color: #8a8a8a;
+	}
+
+	.back svg {
+		box-sizing: content-box;
+		padding: 0 5px 0 6px; /* the icon sits in a 20px square */
+	}
+
+	.kicker {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		margin: 24px 0 0;
+		font-family: 'IBM Plex Mono', var(--font-mono);
+		font-size: 12px;
+		line-height: 1.2;
+		text-transform: uppercase;
+		color: #a5a5a4;
+	}
+
+	.kicker-dot {
+		width: 4px;
+		height: 4px;
+		border-radius: 50%;
+		background: currentColor;
+	}
+
+	.intro {
+		margin: 8px 0 0;
+		font-size: 20px;
+		font-weight: 600;
+		line-height: 1.2;
+		color: #1e1a15;
+	}
+
+	.concept .hero-media {
+		margin-top: 48px;
+		aspect-ratio: 768 / 450;
+	}
+
+	.concept .hero-media img {
+		object-fit: contain;
+	}
+
+	.concept .details {
+		gap: 92px 10px;
+	}
+
+	.concept .details dd + dd {
+		margin-top: 4px;
+	}
+
+	/* 24px between blocks; sections (labels, and titles without a label) 48px. */
+	.concept .story :global(> * + *) {
+		margin-top: 24px;
+	}
+
+	.concept .story :global(> .label),
+	.concept .story :global(> h2) {
+		margin-top: 48px;
+	}
+
+	.concept .story :global(> .label:first-child) {
+		margin-top: 0;
+	}
+
+	.concept .story :global(> .label + h2) {
+		margin-top: 24px;
+	}
+
+	.concept .story :global(blockquote p + p) {
+		margin-top: 4px;
+	}
+
+	.story :global(blockquote .cite) {
+		font-family: var(--font-sans);
+		font-size: 16px;
+		line-height: 1.65;
+	}
+
+	/* Two columns of title + text (research methods, reflections) */
+	.story :global(.pairs) {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 32px 10px;
+	}
+
+	.story :global(.pairs h3 + p) {
+		margin-top: 10px;
+	}
+
+	.story :global(.pairs.boxed) {
+		column-gap: 24px;
+		padding: 24px;
+		border-radius: 16px;
+		background: #f6f6f6;
+	}
+
+	/* Gray bands around media */
+	.story :global(.panel) {
+		background: #f6f6f6;
+	}
+
+	.story :global(.panel.centered) {
+		padding: 45px 0 42px;
+	}
+
+	.story :global(.panel.centered img) {
+		width: 71.875%; /* 552 of 768 */
+		margin-inline: auto;
+	}
+
+	.story :global(.panel.findings) {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		align-items: start;
+		gap: 10px 3.5%;
+		padding: 52px 7.16% 52px 5.47%;
+	}
+
+	.story :global(.panel.videos) {
+		display: flex;
+		justify-content: center;
+		gap: 24px;
+		padding: 40px;
+	}
+
+	.story :global(.panel.videos video) {
+		width: min(200px, 45%);
+		aspect-ratio: 200 / 409;
+		object-fit: cover;
+		border-radius: 8px;
+	}
+
+	/* Two photos on a dot grid (the background image is set inline) */
+	.story :global(.sketches) {
+		position: relative;
+		aspect-ratio: 768 / 348;
+		background: #f6f6f6 center / cover;
+	}
+
+	.story :global(.sketches img) {
+		position: absolute;
+		top: 12.64%;
+		width: 41.67%;
+	}
+
+	.story :global(.sketches img:first-child) {
+		left: 3.125%;
+	}
+
+	.story :global(.sketches img:last-child) {
+		left: 47.14%;
+	}
+
+	.story :global(.embed iframe) {
+		display: block;
+		width: 100%;
+		aspect-ratio: 768 / 426;
+		border: 0;
+	}
+
 	@media (max-width: 760px) {
 		.case {
 			padding-block: 24px 80px;
+		}
+
+		.story :global(.pairs) {
+			grid-template-columns: 1fr;
+		}
+
+		.concept .details {
+			gap: 32px;
+		}
+
+		.story :global(.panel.videos) {
+			padding: 24px;
+			gap: 16px;
 		}
 
 		.story :global(h2) {
