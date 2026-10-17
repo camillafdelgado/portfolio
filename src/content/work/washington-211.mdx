@@ -18,6 +18,7 @@ details:
 
 import SearchDemo from '../../components/mockups/SearchDemo.tsx';
 import LocationDemo from '../../components/mockups/LocationDemo.tsx';
+import FiltersDemo from '../../components/mockups/FiltersDemo.tsx';
 
 <p class="label">TL;DR</p>
 
@@ -139,11 +140,9 @@ Given we had 21 recommendations and limited resources, we sorted each one by imp
   <LocationDemo client:visible />
 </div>
 
-<h3 class="big">Improving filter visibility</h3>
-
-Each filter group is now a single dropdown inside one collapsible panel, and everything that’s applied shows as a tag people can remove.
-
-<div class="placeholder">Before / after mockup: filters (interactive, to rebuild)</div>
+<div class="demo compare">
+  <FiltersDemo client:visible />
+</div>
 
 <h3 class="big">Reducing cognitive load on resource cards</h3>
 

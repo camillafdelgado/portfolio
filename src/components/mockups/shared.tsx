@@ -147,6 +147,31 @@ export const Icon = {
 			<path d="M3 3l18 18" />
 		</svg>
 	),
+	/** Chevron that flips up when `open`. */
+	chevron: (open: boolean, color = BLUE) => (
+		<svg
+			width="16"
+			height="16"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke={color}
+			strokeWidth="2.2"
+			strokeLinecap="round"
+			style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 250ms ease' }}
+		>
+			<path d="M5 9l7 7 7-7" />
+		</svg>
+	),
+	x: (
+		<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round">
+			<path d="M6 6l12 12M18 6L6 18" />
+		</svg>
+	),
+	replay: (
+		<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+			<path fill="currentColor" d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
+		</svg>
+	),
 	phone: (
 		<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round">
 			<path d="M5 3h4l2 5-2.5 1.5a11 11 0 006 6L16 13l5 2v4a2 2 0 01-2 2A17 17 0 013 5a2 2 0 012-2z" />
@@ -255,6 +280,59 @@ export function LoadingSwap({ loading, reduceMotion, children }: { loading: bool
 				}}
 			>
 				<CardSkeleton />
+			</div>
+		</div>
+	);
+}
+
+/**
+ * The phone itself (frame, buttons, screen, Dynamic Island), drawn at full
+ * size and scaled. `fullScreen` skips the status bar (for Before screenshots).
+ */
+export function PhoneFrame({ scale, label, fullScreen = false, children }: { scale: number; label: string; fullScreen?: boolean; children: ReactNode }) {
+	return (
+		<div role="img" aria-label={label} style={{ width: PHONE_W * scale, height: PHONE_H * scale, position: 'relative' }}>
+			<div style={{ width: PHONE_W, height: PHONE_H, transform: `scale(${scale})`, transformOrigin: '0 0', position: 'relative' }}>
+				{SIDE_BUTTONS.map((b, i) => (
+					<div
+						key={i}
+						style={{
+							position: 'absolute',
+							top: b.top,
+							height: b.height,
+							width: 6,
+							left: b.side === 'left' ? 0 : PHONE_W - BEZEL_X - 2,
+							borderRadius: 2,
+							background: '#2A2A2D',
+							boxShadow: 'inset 0 0 0 1px #6E6E73',
+						}}
+					/>
+				))}
+				<div
+					style={{
+						position: 'absolute',
+						left: BEZEL_X,
+						top: 0,
+						width: 417,
+						height: PHONE_H,
+						borderRadius: 67,
+						background: '#111113',
+						boxShadow: 'inset 0 0 0 1.5px #4A4A4E, 0 0 0 1.5px #A1A1A6, 0 30px 60px -24px rgba(30,26,21,0.35)',
+					}}
+				/>
+				<div style={{ position: 'absolute', left: 16, top: SCREEN_TOP, width: SCREEN_W, height: SCREEN_H, borderRadius: SCREEN_RADIUS, overflow: 'hidden', background: '#fff' }}>
+					<div aria-hidden="true" style={{ width: SCREEN_W, height: SCREEN_H, position: 'relative', fontFamily: SCREEN_FONT, color: INK }}>
+						{fullScreen ? (
+							<div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>{children}</div>
+						) : (
+							<>
+								<StatusBar />
+								<div style={{ position: 'absolute', top: STATUS_H, left: 0, width: SCREEN_W, height: SCREEN_H - STATUS_H, overflow: 'hidden' }}>{children}</div>
+							</>
+						)}
+						<div style={{ position: 'absolute', top: 11, left: (SCREEN_W - 125) / 2, width: 125, height: 37, borderRadius: 18.5, background: '#000' }} />
+					</div>
+				</div>
 			</div>
 		</div>
 	);

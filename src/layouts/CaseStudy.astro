@@ -340,6 +340,12 @@ const { title, status, hero, details } = Astro.props;
 		margin-top: 200px;
 	}
 
+	/* Single-scene mockups (title + phone) are followed by the usual 120px. */
+	.story :global(.demo.compare + h3),
+	.story :global(.demo.compare + .label) {
+		margin-top: 120px;
+	}
+
 	.story :global(.demo li) {
 		max-width: none;
 	}
