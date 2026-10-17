@@ -9,11 +9,6 @@ const work = defineCollection({
 	schema: z.object({
 		title: z.string(),
 		status: z.string(),
-		// 'concept' is the original's narrower page (768px column, Back button,
-		// kicker and intro above a hero image on a colored card).
-		template: z.enum(['default', 'concept']).default('default'),
-		kicker: z.array(z.string()).optional(), // e.g. ['Sweet & Sour', 'Concept']
-		intro: z.string().optional(),
 		hero: z.object({
 			video: z.string().optional(),
 			poster: z.string().optional(),
