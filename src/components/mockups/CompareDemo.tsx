@@ -4,8 +4,9 @@
  * (used by the filters and resource-card mockups).
  *
  * Title and text sit above a framed phone. "After" loops a scripted scene
- * (a fake cursor taps through the redesign); "Before" shows a screenshot of
- * Washington 211's current site.
+ * (a fake cursor taps through the redesign) or, with no script, just shows the
+ * screen and its own CSS animation; "Before" shows a screenshot of Washington
+ * 211's current site.
  */
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type RefObject } from 'react';
 import { EASE_STD, INK, Icon, PHONE_W, PhoneFrame } from './shared';
@@ -26,11 +27,13 @@ interface Props<S extends CompareState> {
 	beforeAlt: string;
 	Screen: ComponentType<CompareScreenProps<S>>;
 	init: S;
-	script: [number, Partial<S>][];
+	/** Leave out for a screen that animates itself (no cursor, no replay). */
+	script?: [number, Partial<S>][];
 	/** Loop length in ms. */
-	duration: number;
+	duration?: number;
 	/** State keys whose changes move things around, so the cursor re-aims. */
-	layoutKeys: (keyof S)[];
+	layoutKeys?: (keyof S)[];
+	tablistLabel?: string;
 	titleLetterSpacing?: string;
 	hint?: string;
 	phoneWidth?: number;
@@ -56,9 +59,10 @@ export default function CompareDemo<S extends CompareState>({
 	beforeAlt,
 	Screen,
 	init,
-	script,
-	duration,
-	layoutKeys,
+	script = [],
+	duration = 0,
+	layoutKeys = [],
+	tablistLabel,
 	titleLetterSpacing = '-0.2px',
 	hint = 'Toggle to compare',
 	phoneWidth = 320,
@@ -73,7 +77,8 @@ export default function CompareDemo<S extends CompareState>({
 	const rootRef = useRef<HTMLDivElement>(null);
 	const stageRef = useRef<HTMLDivElement>(null);
 
-	const playing = tab === 'after' && inView && !reduceMotion;
+	const scripted = script.length > 0;
+	const playing = scripted && tab === 'after' && inView && !reduceMotion;
 	const scale = (width > 0 ? Math.min(phoneWidth, (width - 48) / 1.1694117647058824) : phoneWidth) / PHONE_W;
 
 	useEffect(() => {
@@ -170,7 +175,7 @@ export default function CompareDemo<S extends CompareState>({
 			<p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 16, fontWeight: 400, lineHeight: 1.65, margin: '0 0 16px', color: '#404040' }}>{body}</p>
 			{hint && <p style={{ ...LABEL, margin: '0 0 10px', color: '#8A8A8A', textTransform: 'uppercase' }}>{hint}</p>}
 			<div style={{ border: '1px solid rgba(30,26,21,0.08)', borderRadius: 12, overflow: 'hidden' }}>
-				<div role="tablist" aria-label={`Compare: ${title}`} style={{ display: 'flex' }}>
+				<div role="tablist" aria-label={tablistLabel ?? `Compare: ${title}`} style={{ display: 'flex' }}>
 					{tabButton('after', 'After')}
 					{tabButton('before', 'Before')}
 				</div>
@@ -211,7 +216,7 @@ export default function CompareDemo<S extends CompareState>({
 							<img src={beforeImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
 						</PhoneFrame>
 					</div>
-					{tab === 'after' && !reduceMotion && (
+					{scripted && tab === 'after' && !reduceMotion && (
 						<button
 							type="button"
 							className="fc-replay"
