@@ -15,7 +15,8 @@
  * HTML blocks used inside the story:
  *   <p class="label">Background</p>              section label (starts a section)
  *   <div class="callout"><p class="label">…</p><p>…</p></div>   gray box
- *   <blockquote><p>“…”</p><p>— Name</p></blockquote>          quote with a bar
+ *   <blockquote><p>“…”</p><p>— Name</p></blockquote>          quote with a bar:
+ *        Pull Quote style (Geist italic), attribution in Body
  *   <div class="grid-2"> <div>…</div> … </div>   two columns (insights)
  *   <figure> <img> <figcaption> </figure>        image + caption
  *   <div class="process"> <section id="process-step-1">…</section> … </div>
@@ -256,8 +257,18 @@ const { title, status, hero, details } = Astro.props;
 		background: #8a8a8a;
 	}
 
+	/* Pull Quote style (from the Figma style guide): Geist italic 18 / 1.55,
+	   black; the attribution under it is Body. */
+	.story :global(blockquote p:first-child) {
+		font-style: italic;
+		color: #000;
+	}
+
 	.story :global(blockquote p + p) {
-		margin-top: 8px;
+		margin-top: 4px;
+		font-family: var(--font-sans);
+		font-size: 16px;
+		line-height: 1.65;
 	}
 
 	/* Insights: two columns of label, title, line, image */
