@@ -1,0 +1,171 @@
+---
+title: Improving Washington 211’s search engine
+status: Shipped
+hero:
+  video: /projects/wa211.mp4
+  poster: /projects/wa211-poster.jpg
+  alt: Walkthrough of the Washington 211 search redesign
+details:
+  - label: My role
+    items: [UX Researcher, and Designer]
+  - label: Timeline
+    items: [Jan - Apr 2026]
+  - label: Team
+    items: [3 UX Researchers, Washington 211 Team, DSHS Team]
+  - label: Disciplines
+    items: [Usability Testing, Lead Synthesizer, Prototyping]
+---
+
+import SearchDemo from '../../components/mockups/SearchDemo.tsx';
+
+<p class="label">TL;DR</p>
+
+When someone needs housing immediately, a search that returns the wrong results isn't a small problem. We tested users with traumatic brain injuries (TBI) and discovered that they couldn't find help that fit them. Our heuristic evaluation showed that the same issues affect everyone.
+
+I worked across usability testing and synthesizing, then led the design and prototyping: mapping how Washington 211's search fails users and designing solutions that address the highest-priority breakdowns.
+
+<p class="label">Background</p>
+
+## People couldn't find information, so they kept calling
+
+Washington 211 is a nonprofit that points people across the state to essential services. Many callers were asking about information already on its website, overwhelming the call centers. Because its users have such different needs, we partnered with the Department of Social & Health Services to design for many of them at once.
+
+<video src="/work/washington-211/background.mp4" autoplay muted loop playsinline aria-label="The Washington 211 website"></video>
+
+<p class="label">Our initial assumption</p>
+
+## We believed people with traumatic brain injuries (TBI) were giving up because results didn’t fit them
+
+People with TBI kept landing on services they couldn’t use, so we set out to understand what kept them from reaching support.
+
+<div class="callout">
+  <p class="label">Our north star</p>
+  <p>How do we make results fit what people search for, and pages easier to follow, so people with TBI can reach the support they’re eligible for?</p>
+</div>
+
+<p class="label">Research</p>
+
+## Watching people search for help
+
+We watched 6 people with TBI work through 4 tasks on Washington 211, recruited from 41 screener respondents, guided by DSHS’s research on TBI, and paired with a heuristic evaluation of the site.
+
+<blockquote>
+  <p>“Results were garbage... I would probably give up at this point."</p>
+  <p>— P1</p>
+</blockquote>
+
+<div class="grid-2">
+  <div>
+    <p class="label">Insight #1</p>
+    <h3>Searches returned services people couldn’t use</h3>
+    <p>Only 67% could identify a resource that fit their need.</p>
+    <img src="/work/washington-211/insight-1-fit.svg" alt="Emotional journey map excerpt: a user enters a website with heightened emotions, results don't apply and they get more frustrated, then they abandon the website." loading="lazy" />
+  </div>
+  <div>
+    <p class="label">Insight #2</p>
+    <h3>You can only get returns if you type the exact right words</h3>
+    <p>Results depended on matching Washington 211’s own labels.</p>
+    <img src="/work/washington-211/insight-2-keywords.svg" alt="Usability test search on wa211.org: a search for “shelter/housing/roommate” returns “No results found matching your query.” Users edited their query and couldn't reach a relevant result without the right keywords." loading="lazy" />
+  </div>
+  <div>
+    <p class="label">Insight #3</p>
+    <h3>Filters didn't help</h3>
+    <p>Only 50% could narrow their results.</p>
+    <img src="/work/washington-211/insight-3-filters.svg" alt="The Washington 211 results page filters during usability testing." loading="lazy" />
+  </div>
+  <div>
+    <p class="label">Insight #4</p>
+    <h3 class="one-line">Dense text made it hard to concentrate</h3>
+    <p>Key details were buried in long blocks of text.</p>
+    <img src="/work/washington-211/insight-4-dense-text.jpg" alt="A Washington 211 resource page with long blocks of dense text." loading="lazy" />
+  </div>
+</div>
+
+<p class="label">Process</p>
+
+## The problem was never just about TBI
+
+Our heuristic evaluation found 21 design and interaction requirements rated major or critical, with accessibility the most severe, so every decision below was made for all of Washington 211’s users.
+
+<div class="process">
+<div class="process-counter" aria-hidden="true">01</div>
+<div class="process-steps">
+<section id="process-step-1">
+
+### Widening from TBI to everyone
+
+What we thought was a TBI problem was everyone’s problem. The only thing our problem statement needed to change was who it described.
+
+<div class="callout">
+  <p class="label">Our actual problem statement</p>
+  <p>Users with traumatic brain injuries struggle to identify eligible services when presented with ambiguous or non-applicable options. This exposure to irrelevant options causes frustration and forces users to abandon their search before securing valid support.</p>
+</div>
+
+</section>
+<section id="process-step-2">
+
+### Mapping why search fails
+
+Before designing any screens, I mapped how a search moves through Washington 211 today, from landing on the site to reaching a result. Two breakdowns stood out: people have to go through three steps and a jump to a separate site before they can type anything, and exact keyword matching means anyone who doesn’t use 211’s own labels gets nothing useful back.
+
+<figure>
+  <img src="/work/washington-211/flow-map.svg" alt="Systems thinking flow map of a search on Washington 211, from landing on the site to reaching a result, with the proposed solution marked in green." loading="lazy" />
+  <figcaption>Systems thinking flow map; solution proposal marked in green</figcaption>
+</figure>
+
+</section>
+<section id="process-step-3">
+
+### Deciding what to fix first
+
+Given we had 21 recommendations and limited resources, we sorted each one by impact and effort, so Washington 211 could start with the fixes that help most for the least work.
+
+<figure>
+  <img src="/work/washington-211/impact-effort.svg" alt="Impact and effort matrix sorting the 21 recommendations." loading="lazy" />
+</figure>
+
+</section>
+</div>
+</div>
+
+<p class="label">Final product</p>
+
+<div class="demo">
+  <SearchDemo client:visible />
+</div>
+
+<div class="demo">
+  <div class="placeholder">Results that start where you are: before / after mockup (interactive, to rebuild next)</div>
+</div>
+
+<h3 class="big">Improving filter visibility</h3>
+
+Each filter group is now a single dropdown inside one collapsible panel, and everything that’s applied shows as a tag people can remove.
+
+<div class="placeholder">Before / after mockup: filters (interactive, to rebuild)</div>
+
+<h3 class="big">Reducing cognitive load on resource cards</h3>
+
+Who each service is for sits up top as tags, details are trimmed to essential information, eligibility is shown on a first glance, and the main button matches how to reach it.
+
+<div class="placeholder">Before / after mockup: resource cards (interactive, to rebuild)</div>
+
+<p class="label">Outcomes</p>
+
+## Our research findings are currently being built!
+
+It is incredibly satisfying to work on a project as important as this one and to see our recommendations being implemented throughout the year. While we no longer work with WA211, we remain loyal fans of their work.
+
+<blockquote>
+  <p>“This is the best report from a student body I've received to date."</p>
+  <p>— Skylar Young, CEO</p>
+</blockquote>
+
+<p class="label">Reflections</p>
+
+<div class="split">
+  <h3>The best pattern isn’t<br />always the right one</h3>
+  <p>We flagged the “safe exit” button as a bug because it sent people to Microsoft Edge. Washington 211 explained it exists so people in abusive situations can leave the site quickly. A pattern that looks wrong in a heuristic evaluation can be protecting someone, and context from stakeholders changed what we recommended.</p>
+  <h3>Pivot, pivot, pivot</h3>
+  <p>We started this project knowing that we had to make additional adjustments to make our usability tests as minimally cognitive taxing as possible. We had pilot tests with DSHS and did extensive research on the matter. It was still not enough. We had to remain flexible among technical difficulties, surprising findings, and a high drop-out rate.</p>
+</div>

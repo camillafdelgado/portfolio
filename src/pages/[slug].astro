@@ -1,0 +1,17 @@
+---
+// One page per case study in src/content/work/ (e.g. /washington-211).
+import { getCollection, render } from 'astro:content';
+import CaseStudy from '../layouts/CaseStudy.astro';
+
+export async function getStaticPaths() {
+	const work = await getCollection('work');
+	return work.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<CaseStudy {...entry.data}>
+	<Content />
+</CaseStudy>

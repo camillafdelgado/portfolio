@@ -1,0 +1,23 @@
+import { defineCollection } from 'astro:content';
+import { glob } from 'astro/loaders';
+import { z } from 'astro/zod';
+
+// Case studies: one Markdown (or MDX, for interactive pieces) file per project
+// in src/content/work/. The file name is the page URL (washington-211.mdx → /washington-211).
+const work = defineCollection({
+	loader: glob({ pattern: '*.{md,mdx}', base: './src/content/work' }),
+	schema: z.object({
+		title: z.string(),
+		status: z.string(),
+		hero: z.object({
+			video: z.string().optional(),
+			poster: z.string().optional(),
+			image: z.string().optional(),
+			alt: z.string(),
+		}),
+		// The details row under the hero, e.g. { label: 'Timeline', items: ['Jan – Apr 2026'] }
+		details: z.array(z.object({ label: z.string(), items: z.array(z.string()) })),
+	}),
+});
+
+export const collections = { work };

@@ -1,0 +1,445 @@
+---
+/**
+ * Shared layout for case-study pages, matched 1:1 to the original Framer
+ * pages (measured at 1280px wide): white page, 1035px column, hero video,
+ * the details grid, then the story (Markdown/MDX from src/content/work/).
+ *
+ * HTML blocks used inside the story:
+ *   <p class="label">Background</p>              section label (starts a section)
+ *   <div class="callout"><p class="label">…</p><p>…</p></div>   gray box
+ *   <blockquote><p>“…”</p><p>— Name</p></blockquote>          quote with a bar
+ *   <div class="grid-2"> <div>…</div> … </div>   two columns (insights)
+ *   <figure> <img> <figcaption> </figure>        image + caption
+ *   <div class="process"> <section id="process-step-1">…</section> … </div>
+ *        indented steps with a sticky 01 / 02 / 03 counter on the left
+ *   <div class="split"> h3, p, h3, p </div>      title left, text right
+ *   <div class="demo"> … </div>                  an interactive mockup (MDX)
+ *   <div class="placeholder"> … </div>           a piece still to be built
+ */
+import Layout from './Layout.astro';
+
+interface Props {
+	title: string;
+	status: string;
+	hero: { video?: string; poster?: string; image?: string; alt: string };
+	details: { label: string; items: string[] }[];
+}
+
+const { title, status, hero, details } = Astro.props;
+---
+
+<Layout title={`${title} — Camilla Delgado`}>
+	<main class="case">
+		<h1 class="sr-only">{title} ({status})</h1>
+
+		<div class="hero-media">
+			{
+				hero.video ? (
+					<video src={hero.video} poster={hero.poster} autoplay muted loop playsinline aria-label={hero.alt} />
+				) : (
+					<img src={hero.image} alt={hero.alt} />
+				)
+			}
+		</div>
+
+		<dl class="details">
+			{
+				details.map((d) => (
+					<div>
+						<dt>{d.label}</dt>
+						{d.items.map((item) => (
+							<dd>{item}</dd>
+						))}
+					</div>
+				))
+			}
+		</dl>
+
+		<article class="story">
+			<slot />
+		</article>
+	</main>
+</Layout>
+
+<style>
+	/* Case studies sit on white, like the original pages. */
+	:global(body) {
+		background: #fff;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	.case {
+		width: min(1035px, 100% - 2 * var(--gutter));
+		margin-inline: auto;
+		padding-block: 48px 120px;
+		color: #404040;
+	}
+
+	.hero-media {
+		aspect-ratio: 1035 / 500;
+		border-radius: 16px;
+		overflow: hidden;
+	}
+
+	.hero-media video,
+	.hero-media img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	/* My role / Timeline / Team / Disciplines */
+	.details {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 37px 9px;
+		margin: 48px 0 0;
+	}
+
+	.details div {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.details dt {
+		margin-bottom: 4px;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		line-height: 1.4;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #5a5248;
+	}
+
+	.details dd {
+		margin: 0;
+		font-size: 16px;
+		line-height: 1.65;
+	}
+
+	/* ---------- The story (rendered Markdown / MDX) ---------- */
+	.story {
+		margin-top: 48px;
+		font-size: 16px;
+		line-height: 1.65;
+	}
+
+	.story :global(*) {
+		margin: 0;
+	}
+
+	/* Default rhythm: 16px between blocks, 26px between paragraphs. */
+	.story :global(> * + *),
+	.story :global(.process section > * + *) {
+		margin-top: 16px;
+	}
+
+	.story :global(p + p) {
+		margin-top: 26px;
+	}
+
+	/* Section labels open a new section, 120px after the last one. */
+	.story :global(.label) {
+		font-family: var(--font-mono);
+		font-size: 14px;
+		font-weight: 500;
+		line-height: 1.4;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #8a8a8a;
+	}
+
+	.story :global(> .label) {
+		margin-top: 120px;
+	}
+
+	.story :global(> .label:first-child) {
+		margin-top: 0;
+	}
+
+	.story :global(> .label + *) {
+		margin-top: 15px;
+	}
+
+	.story :global(h2) {
+		font-size: 32px;
+		font-weight: 600;
+		line-height: 1.2;
+		letter-spacing: -0.02em;
+		color: #1e1a15;
+	}
+
+	.story :global(h2 + p) {
+		margin-top: 17px;
+	}
+
+	.story :global(h3) {
+		font-size: 20px;
+		font-weight: 600;
+		line-height: 1.2;
+		color: #1e1a15;
+	}
+
+	/* Big titles (e.g. under Final product) */
+	.story :global(h3.big) {
+		font-size: 32px;
+		letter-spacing: -0.2px;
+	}
+
+	.story :global(h3.big + p) {
+		margin-top: 12px;
+	}
+
+	.story :global(img),
+	.story :global(video) {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	.story :global(> video),
+	.story :global(> figure video) {
+		aspect-ratio: 1035 / 500;
+		object-fit: cover;
+		border-radius: 16px;
+	}
+
+	/* Gray box: north star, problem statement */
+	.story :global(.callout) {
+		padding: 24px;
+		border-radius: 8px;
+		background: #f2f2f2;
+	}
+
+	.story :global(.callout .label) {
+		font-size: 12px;
+		font-weight: 400;
+		color: #5a5248;
+	}
+
+	.story :global(.callout .label + p) {
+		margin-top: 16px;
+	}
+
+	.story :global(.callout p:not(.label)),
+	.story :global(blockquote p) {
+		font-family: 'Geist', var(--font-sans);
+		font-size: 18px;
+		line-height: 1.55;
+	}
+
+	/* Quote: a 2px gray bar on the left */
+	.story :global(blockquote) {
+		position: relative;
+		padding-left: 18px;
+	}
+
+	.story :global(blockquote)::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		width: 2px;
+		background: #8a8a8a;
+	}
+
+	.story :global(blockquote p + p) {
+		margin-top: 8px;
+	}
+
+	/* Insights: two columns of label, title, line, image */
+	.story :global(.grid-2) {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 32px 15px;
+		margin-top: 120px;
+	}
+
+	.story :global(.grid-2 > div > * + *) {
+		margin-top: 16px;
+	}
+
+	.story :global(.grid-2 .label + h3) {
+		margin-top: 15px;
+	}
+
+	.story :global(.grid-2 h3) {
+		min-height: 2.4em; /* titles take two lines (as on the original) */
+	}
+
+	.story :global(.grid-2 h3.one-line) {
+		min-height: 0;
+	}
+
+	.story :global(.grid-2 img) {
+		margin-top: 17px;
+		border-radius: 16px;
+	}
+
+	.story :global(figcaption) {
+		margin-top: 17px;
+		font-family: var(--font-mono);
+		font-size: 14px;
+		line-height: 1.4;
+		color: #5a5248;
+	}
+
+	/* Process: indented steps; a sticky 01 / 02 / 03 counter in the margin */
+	.story :global(.process) {
+		position: relative;
+		display: grid;
+		grid-template-columns: 120px 1fr;
+		margin-top: 119px;
+	}
+
+	.story :global(.process-counter) {
+		position: sticky;
+		top: 96px;
+		align-self: start;
+		font-size: 32px;
+		font-weight: 600;
+		line-height: 1.2;
+		letter-spacing: -0.02em;
+		color: #111;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.story :global(.process-steps > section + section) {
+		margin-top: 80px;
+	}
+
+	.story :global(.process figure) {
+		margin-top: 15px;
+	}
+
+	.story :global(.process .callout) {
+		margin-top: 16px;
+	}
+
+	/* Final product */
+	.story :global(.demo) {
+		min-width: 0; /* let it shrink so the phone can scale down on small screens */
+		overflow-x: clip; /* until it loads and measures itself, never widen the page */
+	}
+
+	.story :global(.demo + .demo) {
+		margin-top: 200px;
+	}
+
+	.story :global(.demo + h3) {
+		margin-top: 200px;
+	}
+
+	.story :global(.demo li) {
+		max-width: none;
+	}
+
+	.story :global(.placeholder + h3),
+	.story :global(.placeholder + .label) {
+		margin-top: 120px;
+	}
+
+	/* Reflections: title left (336px), text right */
+	.story :global(.split) {
+		display: grid;
+		grid-template-columns: 336px 1fr;
+		gap: 15px 0;
+	}
+
+	.story :global(.split > *) {
+		margin: 0;
+	}
+
+	/* Stand-ins sized like the real mockups, so everything after lines up. */
+	.story :global(.placeholder) {
+		display: grid;
+		place-items: center;
+		min-height: 791px;
+		padding: 24px;
+		border: 1px dashed #d0d0d0;
+		border-radius: 12px;
+		font-family: var(--font-mono);
+		font-size: 13px;
+		text-align: center;
+		color: #8a8a8a;
+	}
+
+	.story :global(h3.big + p + .placeholder) {
+		margin-top: 17px;
+	}
+
+	.story :global(.demo .placeholder) {
+		min-height: 757px;
+	}
+
+	@media (max-width: 760px) {
+		.case {
+			padding-block: 24px 80px;
+		}
+
+		.story :global(h2) {
+			font-size: 26px;
+		}
+
+		.story :global(.grid-2),
+		.story :global(.split),
+		.details {
+			grid-template-columns: 1fr;
+		}
+
+		.story :global(.grid-2 h3) {
+			min-height: 0;
+		}
+
+		.story :global(.process) {
+			grid-template-columns: 56px 1fr;
+		}
+
+		.story :global(.process-counter) {
+			font-size: 22px;
+		}
+
+		.story :global(.split h3:not(:first-child)) {
+			margin-top: 32px;
+		}
+	}
+</style>
+
+<script>
+	// Process counter: shows the number of the last step whose top has passed
+	// 96px from the top of the screen (01 → 02 → 03), like the original.
+	document.querySelectorAll<HTMLElement>('.process').forEach((process) => {
+		const counter = process.querySelector<HTMLElement>('.process-counter');
+		const steps = [...process.querySelectorAll<HTMLElement>('section[id^="process-step-"]')];
+		if (!counter || !steps.length) return;
+		const OFFSET = 96;
+		let queued = false;
+		const update = () => {
+			queued = false;
+			let n = 1;
+			steps.forEach((step, i) => {
+				if (step.getBoundingClientRect().top <= OFFSET) n = i + 1;
+			});
+			counter.textContent = String(n).padStart(2, '0');
+		};
+		const queue = () => {
+			if (!queued) {
+				queued = true;
+				requestAnimationFrame(update);
+			}
+		};
+		window.addEventListener('scroll', queue, { passive: true });
+		window.addEventListener('resize', queue);
+		update();
+	});
+</script>
