@@ -12,10 +12,9 @@ interface Props {
 
 const { title = 'Camilla Delgado', timeOfDay = false } = Astro.props;
 
-// LAUNCH: the site is still in testing while camilladelgado.com points at
-// Framer, so search engines are asked not to index it. Set to false when
-// the domain moves here.
-const PRELAUNCH = true;
+// LAUNCH: while true, search engines are asked not to index the site (used
+// while camilladelgado.com still pointed at Framer). Launched: false.
+const PRELAUNCH = false;
 ---
 
 <html lang="en">
