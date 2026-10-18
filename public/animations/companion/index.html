@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Practice Chat Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Plus+Jakarta+Sans:wght@700&display=swap" rel="stylesheet">
+<style>
+/* ──────────────────────────────────────────────────────────────
+   The Practice chat flow from the final Figma prototype, on a phone.
+   The Practice home screen and the chat header are Figma exports; the chat
+   itself is rebuilt with the Figma styles (Inter 16/24, #2F4F3E bubbles,
+   #AFB8AA outlined buttons, #ECECE8 input) so it can type, press and scroll
+   like the real app. All positions are Figma pixels on a 393×852 screen.
+   ────────────────────────────────────────────────────────────── */
+:root {
+  --stage: #dce2d6;         /* stage background */
+  --screen: #faf7f2;        /* app background */
+  --green: #2f4f3e;         /* Theme/Green-400 */
+  --outline: #afb8aa;       /* Secondary/Green */
+  --black: #2c2c2c;         /* Primary/Black */
+  --gray: #ecece8;          /* Grayscale/Gray100 */
+  --card-text: #49454f;
+  --on-green: #f7f8fa;
+  --divider: #ebe9e5;
+  --placeholder: #9fa09a;
+  --page-bg: #0f1115;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page-bg);
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 20px; padding: 24px 16px;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* ── Stage: same proportions as the homepage project cards (1864×900) ── */
+.stage {
+  position: relative;
+  width: min(1200px, 100%);
+  aspect-ratio: 1864 / 900;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--stage);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Phone: drawn at real size and scaled to fit ── */
+.phone {
+  position: absolute;
+  left: 50%; top: 5%;
+  width: 417px; height: 876px;
+  transform-origin: top center;
+  transform: translateX(-50%) scale(var(--k, 0.5));
+}
+.bezel {
+  position: absolute; inset: 0;
+  border-radius: 60px;
+  background: #151515;
+  box-shadow:
+    inset 0 0 0 1.5px #3a3a3a,
+    0 30px 60px -20px rgb(30 44 36 / 0.35),
+    0 8px 20px -8px rgb(30 44 36 / 0.25);
+}
+.screen {
+  position: absolute;
+  left: 12px; top: 12px;
+  width: 393px; height: 852px;
+  overflow: hidden;
+  border-radius: 48px;
+  background: var(--screen);
+  isolation: isolate;
+  color: var(--black);
+}
+.view { position: absolute; inset: 0; background: var(--screen); }
+
+/* Practice home (Figma export) with a live copy of its button on top. */
+.home > img { display: block; width: 393px; height: 852px; }
+.start {
+  position: absolute; left: 24px; top: 684px; width: 345px; height: 52px;
+  border-radius: 12px; overflow: hidden;
+  background: url(screens/01-practice.png) -24px -684px / 393px 852px;
+}
+
+/* Chat */
+.chat { display: flex; flex-direction: column; z-index: 2; transform: translateX(100%); }
+.header { flex: none; height: 116px; background: url(screens/02-offer.png) 0 0 / 393px 852px; }
+.feed { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.thread { position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 20px; padding: 16px 24px 24px; }
+.ai { align-self: stretch; margin: 0; font-size: 16px; line-height: 24px; }
+.user {
+  width: 248px; margin: 0; padding: 16px;
+  border-radius: 20px 20px 0 20px;
+  background: var(--green); color: var(--on-green);
+  font-size: 16px; line-height: 24px;
+}
+.user > span { display: block; }
+.w { display: inline-block; }
+.dots { align-self: flex-start; display: flex; gap: 5px; padding: 9px 0; }
+.dots i { width: 7px; height: 7px; border-radius: 50%; background: #a3a69e; animation: dot 0.9s ease-in-out infinite; }
+.dots i:nth-child(2) { animation-delay: 0.12s; }
+.dots i:nth-child(3) { animation-delay: 0.24s; }
+@keyframes dot { 0%, 60%, 100% { transform: none; opacity: 0.45; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+/* Buttons: tint overlay for hover/pressed, ripple on tap. */
+.btn {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: inline-grid; place-items: center;
+  padding: 10px 16px;
+  border: 1.5px solid var(--outline); border-radius: 12px;
+  font: 700 14px/20px "Plus Jakarta Sans", Inter, sans-serif; color: var(--green);
+  white-space: nowrap;
+  transition: border-color 200ms ease;
+}
+.btn > span { grid-area: 1 / 1; display: flex; align-items: center; gap: 8px; }
+.btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.btn::before, .icon-btn::before, .start::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  border-radius: inherit; background: var(--green); opacity: 0;
+  transition: opacity 180ms ease;
+}
+.start::before { z-index: 1; background: #000; }
+.hover::before { opacity: 0.07; }
+.pressed::before { opacity: 0.14; }
+.start.pressed::before { opacity: 0.18; }
+.btn.hover, .btn.pressed { border-color: #8e9c89; }
+.btn.done { border-color: var(--green); }
+.btn.done::before { opacity: 0.08; }
+.ripple { position: absolute; z-index: -1; border-radius: 50%; background: var(--green); pointer-events: none; }
+.start .ripple { z-index: 2; background: #fff; }
+.save .saved { opacity: 0; }
+
+/* The generated script */
+.script { align-self: stretch; display: flex; flex-direction: column; gap: 12px; }
+.card { display: flex; flex-direction: column; gap: 10px; padding: 12px 16px; border-radius: 12px; background: var(--gray); color: var(--card-text); font-size: 14px; line-height: 20px; }
+.card h4 { margin: 0; font-size: 14px; font-weight: 700; }
+.card p { margin: 0; }
+.actions { display: flex; gap: 12px; }
+.actions .btn { height: 40px; padding: 0 16px; }
+
+/* Input bar: 313×44 field, grows to fit while typing; mic turns into send. */
+.inputbar {
+  flex: none;
+  display: flex; align-items: flex-end; gap: 8px;
+  padding: 15px 20px 32px;
+  border-top: 1px solid var(--divider);
+  background: var(--screen);
+}
+.field {
+  flex: 0 0 313px;
+  min-height: 44px; padding: 10px 16px;
+  border-radius: 12px; background: var(--gray);
+  font-size: 16px; line-height: 24px; color: var(--placeholder);
+  box-shadow: inset 0 0 0 1.5px transparent;
+  transition: box-shadow 200ms ease;
+  overflow: hidden;
+}
+.field.focus { box-shadow: inset 0 0 0 1.5px var(--outline); }
+.field.typing { padding: 12px 16px; font-size: 14px; line-height: 20px; color: var(--black); }
+.caret { display: inline-block; width: 1.5px; height: 17px; margin-left: 1px; vertical-align: -3px; background: var(--green); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.icon-btn {
+  position: relative; isolation: isolate; overflow: hidden;
+  flex: none; display: grid; place-items: center;
+  width: 40px; height: 40px; border-radius: 50%;
+  color: var(--black);
+}
+.icon-btn svg { grid-area: 1 / 1; width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.icon-btn .send { opacity: 0; color: var(--green); }
+
+/* Touch indicator */
+.touch {
+  position: absolute; left: 0; top: 0;
+  width: 46px; height: 46px; margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.55);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.1), 0 6px 16px rgb(0 0 0 / 0.18);
+  opacity: 0; pointer-events: none; z-index: 10;
+}
+
+/* ── Controls (hidden with ?clean for recording) ── */
+.controls { display: flex; gap: 8px; }
+.controls button {
+  padding: 8px 14px; border: 1px solid #2a2f3a; border-radius: 8px;
+  background: #1a1d24; color: #e8eaf0; font: 500 13px Inter, sans-serif; cursor: pointer;
+}
+.clean .controls { display: none; }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage" role="img" aria-label="The Sweet & Sour practice chat on a phone: start a practice chat, ask the AI for a conversation template, type that the conversation is with Mom, and save the script the AI writes.">
+  <div class="phone" id="phone" aria-hidden="true">
+    <div class="bezel"></div>
+    <div class="screen" id="screen">
+      <div class="view home" id="home">
+        <img src="screens/01-practice.png" alt="">
+        <span class="start" id="start"></span>
+      </div>
+      <div class="view chat" id="chat">
+        <div class="header"></div>
+        <div class="feed" id="feed"><div class="thread" id="thread"></div></div>
+        <div class="inputbar">
+          <div class="field" id="field">Ask anything</div>
+          <span class="icon-btn" id="send">
+            <svg class="mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>
+            <svg class="send" viewBox="0 0 24 24"><path d="M4 4l17 8-17 8 3-8zM7 12h14"/></svg>
+          </span>
+        </div>
+      </div>
+      <span class="touch" id="touch"></span>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="replay">Replay</button>
+  <button id="pause">Pause</button>
+</div>
+
+<script>
+/* ──────────────────────────────────────────────────────────────
+   CONFIG: the conversation, word for word from the Figma prototype
+   ────────────────────────────────────────────────────────────── */
+const CONFIG = {
+  greeting: 'Hello, I can help you practice a conversation with your family! Do you want me to generate a conversation template based on your guidance chat history?',
+  chip: 'Generate a conversation template',
+  ask: 'Please generate a template for me.',
+  question: 'Perfect. Before I start generating the template, could you tell me who you are having the conversation with? Also, what tone or attitude do you prefer?',
+  answer: 'I plan to have the conversation with my mom. I don’t know what tone or attitude is appropriate for this type of conversation. Tell me what to do.',
+  reply: 'No problem. I will generate a conversation script based on your chat history about Advanced Care Planning with a genuine and casual tone. This is how you can open the conversation:',
+  script: [
+    ['You', 'Hi Mom, I’m excited to see you soon. I thought it would be best that we meet to talk things over.'],
+    ['Mom', 'Hi. I am super nervous today. Things have not been going that well recently.'],
+    ['You', 'Tell me more about that. What do you think is happening with your COPD?'],
+  ],
+};
+
+const $ = (id) => document.getElementById(id);
+const stage = $('stage'), phone = $('phone'), screenEl = $('screen'), touch = $('touch');
+const home = $('home'), start = $('start'), chat = $('chat'), feed = $('feed'), thread = $('thread');
+const field = $('field'), sendBtn = $('send');
+if (new URLSearchParams(location.search).has('clean')) document.body.classList.add('clean');
+
+/* Phone height = 90% of the stage. */
+const fit = () => phone.style.setProperty('--k', (stage.clientHeight * 0.9) / 876);
+new ResizeObserver(fit).observe(stage);
+fit();
+
+/* ── Motion ── */
+function spring(stiffness, damping) {
+  const pts = [0];
+  let x = 0, v = 0, t = 0;
+  while (t < 2.5) {
+    v += (stiffness * (1 - x) - damping * v) / 60;
+    x += v / 60;
+    t += 1 / 60;
+    pts.push(+x.toFixed(4));
+    if (Math.abs(1 - x) < 0.0015 && Math.abs(v) < 0.02) break;
+  }
+  pts[pts.length - 1] = 1;
+  return CSS.supports('transition-timing-function', 'linear(0, 1)')
+    ? { easing: `linear(${pts.join(', ')})`, duration: Math.round(t * 1000) }
+    : { easing: 'cubic-bezier(0.22, 1, 0.36, 1)', duration: Math.round(t * 800) };
+}
+const SOFT = spring(260, 28);   // layout: quick, no visible overshoot
+const POP = spring(420, 22);    // arrivals and button releases: a small bounce
+const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const IN_OUT = 'cubic-bezier(0.65, 0, 0.35, 1)';
+
+let paused = false;
+function anim(el, frames, { spring: s, duration = 300, easing = EASE, delay = 0, fill = 'backwards' } = {}) {
+  // Springs overshoot, which would make opacity flicker, so fades run on a plain ease.
+  if (s && frames.some((f) => 'opacity' in f)) {
+    const fade = el.animate(frames.map((f) => ({ opacity: f.opacity ?? 1 })), { duration: 220, easing: 'ease-out', delay, fill });
+    if (paused) fade.pause();
+    frames = frames.map(({ opacity, ...rest }) => rest);
+    if (!Object.keys(frames[0]).length) return fade;
+  }
+  const a = el.animate(frames, { ...(s || { duration, easing }), delay, fill });
+  if (paused) a.pause();
+  return a;
+}
+
+/* A clock that only runs while playing, so waits stop when paused. */
+let clock = 0, last = 0, rafId = 0;
+const waiters = [];
+function tick(t) {
+  clock += Math.min(t - last, 50);
+  last = t;
+  for (let i = waiters.length - 1; i >= 0; i--) if (clock >= waiters[i].due) waiters.splice(i, 1)[0].resolve();
+  rafId = requestAnimationFrame(tick);
+}
+const wait = (ms) => new Promise((resolve) => waiters.push({ due: clock + ms, resolve }));
+
+/* ── Geometry: everything in screen pixels ── */
+const scale = () => screenEl.getBoundingClientRect().width / 393;
+function pt(node, fx = 0.5, fy = 0.5) {
+  const s = screenEl.getBoundingClientRect(), r = node.getBoundingClientRect(), k = scale();
+  return { x: (r.left - s.left + r.width * fx) / k, y: (r.top - s.top + r.height * fy) / k };
+}
+
+/* ── Chat building blocks ── */
+function el(html) {
+  const t = document.createElement('template');
+  t.innerHTML = html.trim();
+  return t.content.firstElementChild;
+}
+const words = (text) => text.split(' ').map((w) => `<span class="w">${w}</span>`).join(' ');
+const aiText = (text) => el(`<p class="ai">${words(text)}</p>`);
+const userBubble = (text) => el(`<p class="user"><span>${text}</span></p>`);
+const dots = () => el(`<div class="dots"><i></i><i></i><i></i></div>`);
+function scriptBlock() {
+  const lines = CONFIG.script.map(([who, line]) => `<p><b>${who}:</b> ${line}</p>`).join('');
+  return el(`
+    <div class="script">
+      <div class="card"><h4>Your conversation script</h4>${lines}</div>
+      <div class="actions">
+        <span class="btn save"><span class="label">Save</span><span class="saved">Saved <svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></span>
+        <span class="btn"><span>Copy <svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/></svg></span></span>
+      </div>
+    </div>`);
+}
+
+function stream(node, { step = 7, delay = 0 } = {}) {
+  const ws = node.querySelectorAll('.w');
+  ws.forEach((w, i) =>
+    anim(w, [{ opacity: 0, transform: 'translateY(6px)', filter: 'blur(3px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: 280, delay: delay + i * step }),
+  );
+  return delay + ws.length * step + 280;
+}
+
+/* Keeps the newest message in view, scrolling smoothly like the real chat. */
+let scrolled = 0;
+function follow() {
+  const y = Math.max(0, thread.offsetHeight - feed.clientHeight);
+  if (y === scrolled) return;
+  const from = scrolled;
+  scrolled = y;
+  thread.style.transform = `translateY(${-y}px)`;
+  anim(thread, [{ transform: `translateY(${-from}px)` }, { transform: `translateY(${-y}px)` }], { duration: 480, easing: IN_OUT });
+}
+
+/* The AI thinks for a beat, then its message writes itself in. */
+async function aiSays(text, think = 280) {
+  const d = dots();
+  thread.append(d);
+  anim(d, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { spring: POP });
+  follow();
+  await wait(think);
+  const msg = aiText(text);
+  d.replaceWith(msg);
+  follow();
+  return stream(msg);
+}
+
+/* A new bubble grows out of where its text came from. */
+function emerge(bubble, from, align = 'right') {
+  const to = bubble.getBoundingClientRect(), k = scale();
+  const dx = (align === 'right' ? from.right - to.right : from.left - to.left) / k;
+  const dy = (from.top - to.top) / k;
+  bubble.style.transformOrigin = align === 'right' ? 'top right' : 'top left';
+  anim(bubble, [{ transform: `translate(${dx}px, ${dy}px) scale(${Math.min(1, from.width / to.width)}, ${Math.min(1, from.height / to.height)})` }, { transform: 'none' }], { spring: SOFT });
+  anim(bubble, [{ opacity: 0 }, { opacity: 1 }], { duration: 120 });
+  anim(bubble.firstElementChild, [{ opacity: 0, filter: 'blur(3px)' }, { opacity: 1, filter: 'blur(0)' }], { duration: 260, delay: 140 });
+}
+
+/* ── Touch: glide, hover, press, release ── */
+let cur = null;
+async function moveTo(p) {
+  const at = `translate(${p.x}px, ${p.y}px)`;
+  if (!cur) {
+    touch.style.opacity = 1;
+    anim(touch, [{ transform: `${at} scale(1.3)`, opacity: 0 }, { transform: at, opacity: 1 }], { duration: 240 });
+    touch.style.transform = at;
+    cur = p;
+    await wait(200);
+    return;
+  }
+  const mid = { x: (cur.x + p.x) / 2 + (p.y - cur.y) * 0.12, y: (cur.y + p.y) / 2 - Math.abs(p.x - cur.x) * 0.12 };
+  touch.style.transform = at;
+  anim(touch, [{ transform: `translate(${cur.x}px, ${cur.y}px)` }, { transform: `translate(${mid.x}px, ${mid.y}px)`, offset: 0.5 }, { transform: at }], { duration: 320, easing: IN_OUT });
+  cur = p;
+  await wait(330);
+}
+function lift() {
+  if (!cur) return;
+  touch.style.opacity = 0;
+  anim(touch, [{ opacity: 1, transform: `translate(${cur.x}px, ${cur.y}px)` }, { opacity: 0, transform: `translate(${cur.x}px, ${cur.y}px) scale(1.15)` }], { duration: 220 });
+  cur = null;
+}
+
+/* Like real software: hover tint, press (sink + darker tint + ripple from the
+   finger), then spring back on release. */
+async function press(target, { hold = 90 } = {}) {
+  target.classList.add('hover');
+  await wait(110);
+  const at = `translate(${cur.x}px, ${cur.y}px)`;
+  target.classList.add('pressed');
+  const sink = { duration: 90, easing: 'ease-out', fill: 'forwards' };
+  const tDown = anim(touch, [{ transform: at }, { transform: `${at} scale(0.8)` }], sink);
+  const bDown = anim(target, [{ transform: 'none' }, { transform: 'scale(0.97)' }], sink);
+
+  const k = scale(), r = target.getBoundingClientRect(), s = screenEl.getBoundingClientRect();
+  const size = Math.hypot(target.offsetWidth, target.offsetHeight) * 2;
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  Object.assign(ripple.style, {
+    width: `${size}px`, height: `${size}px`,
+    left: `${cur.x - (r.left - s.left) / k - size / 2}px`,
+    top: `${cur.y - (r.top - s.top) / k - size / 2}px`,
+  });
+  target.append(ripple);
+  anim(ripple, [{ transform: 'scale(0)', opacity: 0.22 }, { transform: 'scale(1)', opacity: 0 }], { duration: 550, easing: 'cubic-bezier(0.2, 0.6, 0.35, 1)', fill: 'forwards' })
+    .finished.then(() => ripple.remove(), () => {});
+
+  await wait(hold);
+  anim(touch, [{ transform: `${at} scale(0.8)` }, { transform: at }], { spring: POP });
+  anim(target, [{ transform: 'scale(0.97)' }, { transform: 'none' }], { spring: POP });
+  tDown.cancel();
+  bDown.cancel();
+  target.classList.remove('pressed', 'hover');
+}
+
+/* The input box changes height smoothly; the chat above follows it. */
+function resizeField(mutate) {
+  const before = field.offsetHeight;
+  mutate();
+  const after = field.offsetHeight;
+  if (before !== after) anim(field, [{ height: `${before}px` }, { height: `${after}px` }], { duration: 260, easing: EASE });
+  return after;
+}
+
+/* ── The flow (~6.9s per loop) ── */
+function reset() {
+  stage.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+  thread.replaceChildren();
+  thread.style.transform = '';
+  scrolled = 0;
+  field.className = 'field';
+  field.style.height = '';
+  field.textContent = 'Ask anything';
+  sendBtn.querySelector('.mic').style.opacity = '';
+  sendBtn.querySelector('.send').style.opacity = '';
+  chat.style.transform = 'translateX(100%)';
+  home.style.transform = '';
+  touch.style.opacity = 0;
+  cur = null;
+}
+
+async function play() {
+  // 1. Practice home: tap "Start A Practice Chat"; the chat slides in.
+  await wait(120);
+  await moveTo(pt(start, 0.55, 0.5));
+  await press(start);
+  lift();
+  chat.style.transform = 'none';
+  home.style.transform = 'translateX(-28%)';
+  anim(chat, [{ transform: 'translateX(100%)' }, { transform: 'none' }], { duration: 440, easing: IN_OUT });
+  anim(home, [{ transform: 'none', filter: 'brightness(1)' }, { transform: 'translateX(-28%)', filter: 'brightness(0.94)' }], { duration: 440, easing: IN_OUT, fill: 'both' });
+  await wait(250);
+
+  // 2. The AI offers a template; tap the suggestion and it becomes your message.
+  const hello = aiText(CONFIG.greeting);
+  thread.append(hello);
+  const t = stream(hello, { step: 8 });
+  const chip = el(`<span class="btn"><span>${CONFIG.chip}</span></span>`);
+  thread.append(chip);
+  anim(chip, [{ opacity: 0, transform: 'translateY(8px) scale(0.96)' }, { opacity: 1, transform: 'none' }], { spring: POP, delay: t - 120 });
+  await wait(t + 60);
+  await moveTo(pt(chip, 0.6, 0.55));
+  await press(chip);
+  lift();
+  const from = chip.getBoundingClientRect();
+  const ghost = chip.cloneNode(true);
+  ghost.querySelectorAll('.ripple').forEach((x) => x.remove());
+  Object.assign(ghost.style, { position: 'absolute', margin: 0, left: `${chip.offsetLeft}px`, top: `${chip.offsetTop}px` });
+  thread.append(ghost);
+  anim(ghost, [{ opacity: 1 }, { opacity: 0, transform: 'scale(0.95)' }], { duration: 200, fill: 'forwards' }).finished.then(() => ghost.remove(), () => {});
+  const ask = userBubble(CONFIG.ask);
+  chip.replaceWith(ask);
+  emerge(ask, from);
+  follow();
+  await wait(150);
+
+  // 3. The AI asks who it's for and what tone.
+  await wait(await aiSays(CONFIG.question));
+
+  // 4. Tap the input and type the answer, letter by letter.
+  await moveTo(pt(field, 0.4, 0.5));
+  field.classList.add('focus');
+  anim(touch, [{ transform: `translate(${cur.x}px, ${cur.y}px) scale(0.8)` }, { transform: `translate(${cur.x}px, ${cur.y}px)` }], { spring: POP });
+  await wait(80);
+  lift();
+  const typed = document.createElement('span');
+  const caret = el('<span class="caret"></span>');
+  const fullHeight = resizeField(() => {
+    field.classList.add('typing');
+    field.replaceChildren(typed, caret);
+    typed.textContent = CONFIG.answer;  // size the box for the whole answer up front, so it grows once
+  });
+  field.style.height = `${fullHeight}px`;  // hold it while the text types in
+  typed.textContent = '';
+  const mic = sendBtn.querySelector('.mic'), send = sendBtn.querySelector('.send');
+  mic.style.opacity = 0;
+  send.style.opacity = 1;
+  anim(mic, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(0.6) rotate(-30deg)' }], { duration: 180 });
+  anim(send, [{ opacity: 0, transform: 'scale(0.6) rotate(30deg)' }, { opacity: 1, transform: 'none' }], { spring: POP });
+  requestAnimationFrame(follow);
+  const TYPE_MS = 850;   // the whole answer, typed at a steady clip
+  const t0 = clock;
+  while (typed.textContent.length < CONFIG.answer.length) {
+    const n = Math.ceil(((clock - t0) / TYPE_MS) * CONFIG.answer.length);
+    typed.textContent = CONFIG.answer.slice(0, Math.max(1, n));
+    await wait(1);
+  }
+  await wait(120);
+
+  // 5. Send: the text lifts out of the input into a bubble; the input resets.
+  await moveTo(pt(sendBtn));
+  await press(sendBtn, { hold: 90 });
+  lift();
+  const typedRect = typed.getBoundingClientRect();
+  const answer = userBubble(CONFIG.answer);
+  thread.append(answer);
+  emerge(answer, typedRect, 'left');
+  resizeField(() => {
+    field.className = 'field';
+    field.style.height = '';
+    field.textContent = 'Ask anything';
+  });
+  mic.style.opacity = '';
+  send.style.opacity = '';
+  anim(send, [{ opacity: 1 }, { opacity: 0 }], { duration: 150 });
+  anim(mic, [{ opacity: 0, transform: 'scale(0.6)' }, { opacity: 1, transform: 'none' }], { spring: POP, delay: 80 });
+  requestAnimationFrame(follow);
+  await wait(120);
+
+  // 6. The AI writes the script.
+  const t2 = await aiSays(CONFIG.reply);
+  const script = scriptBlock();
+  thread.append(script);
+  anim(script.querySelector('.card'), [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { spring: SOFT, delay: t2 - 150 });
+  [...script.querySelectorAll('.actions .btn')].forEach((b, i) =>
+    anim(b, [{ opacity: 0, transform: 'translateY(8px) scale(0.95)' }, { opacity: 1, transform: 'none' }], { spring: POP, delay: t2 + 60 + i * 60 }),
+  );
+  follow();
+  await wait(t2 + 200);
+
+  // 7. Save it.
+  const save = script.querySelector('.save');
+  await moveTo(pt(save));
+  await press(save);
+  save.classList.add('done');
+  const label = save.querySelector('.label'), saved = save.querySelector('.saved');
+  label.style.opacity = 0;
+  saved.style.opacity = 1;
+  anim(label, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-8px)' }], { duration: 160, easing: 'ease-in' });
+  anim(saved, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { spring: POP, delay: 80 });
+  anim(saved.querySelector('path'), [{ strokeDasharray: 24, strokeDashoffset: 24 }, { strokeDasharray: 24, strokeDashoffset: 0 }], { duration: 280, delay: 160, easing: IN_OUT });
+  await wait(200);
+  lift();
+  await wait(380);
+
+  // 8. Back to Practice home (the chat slides away), and loop. No fade to black.
+  chat.style.transform = 'translateX(100%)';
+  home.style.transform = '';
+  home.getAnimations().forEach((a) => a.cancel());
+  anim(chat, [{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: 440, easing: IN_OUT });
+  anim(home, [{ transform: 'translateX(-28%)', filter: 'brightness(0.94)' }, { transform: 'none', filter: 'brightness(1)' }], { duration: 440, easing: IN_OUT });
+  await wait(460);
+}
+
+/* ── Playback ── */
+let runId = 0, loops = 0;
+async function loop() {
+  const id = ++runId;
+  while (id === runId) {
+    loops++;
+    reset();
+    await play();
+  }
+}
+
+function setPaused(p) {
+  paused = p;
+  for (const a of stage.getAnimations({ subtree: true })) {
+    if (p && a.playState === 'running') a.pause();
+    else if (!p && a.playState === 'paused') a.play();
+  }
+  cancelAnimationFrame(rafId);
+  if (!p) rafId = requestAnimationFrame((t) => { last = t; tick(t); });
+  $('pause').textContent = p ? 'Play' : 'Pause';
+}
+
+$('pause').onclick = () => setPaused(!paused);
+$('replay').onclick = () => { waiters.length = 0; loop(); setPaused(false); };
+document.addEventListener('visibilitychange', () => setPaused(document.hidden));
+
+/* ── Render mode (?render): exact frame-by-frame stepping, for exporting video.
+   Time only moves when window.__step(ms) is called: it advances the story's
+   clock and every animation by the same amount, so each frame is evenly spaced. */
+if (new URLSearchParams(location.search).has('render')) {
+  window.__loops = () => loops;
+  window.__start = () => { setPaused(true); loop(); };
+  window.__step = async (ms) => {
+    clock += ms;
+    for (let i = waiters.length - 1; i >= 0; i--) if (clock >= waiters[i].due) waiters.splice(i, 1)[0].resolve();
+    await new Promise((r) => setTimeout(r, 0));   // let the story run up to its next wait
+    for (const a of document.getAnimations()) {
+      if (a.playState !== 'paused') a.pause();
+      a.currentTime = (a.currentTime ?? 0) + ms;
+    }
+  };
+}
+
+Promise.all([document.fonts.ready, ...[...document.images].map((i) => i.decode().catch(() => {}))]).then(() => {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    // A still frame: the generated script in the chat.
+    chat.style.transform = 'none';
+    thread.append(userBubble(CONFIG.answer), aiText(CONFIG.reply), scriptBlock());
+    thread.style.transform = `translateY(${-Math.max(0, thread.offsetHeight - feed.clientHeight)}px)`;
+    return;
+  }
+  if (window.__start) return window.__ready = true;   // render mode: wait to be stepped
+  setPaused(false);
+  loop();
+});
+</script>
+</body>
+</html>
