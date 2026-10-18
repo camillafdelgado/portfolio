@@ -11,4 +11,7 @@ export default defineConfig({
 	// Case-study text is copied verbatim from the original pages, curly quotes
 	// included, so don't let Markdown re-curl the straight ones.
 	markdown: { smartypants: false },
+	// The site's CSS is a few KB, so inline it rather than block first paint on
+	// separate stylesheet requests.
+	build: { inlineStylesheets: 'always' },
 });
