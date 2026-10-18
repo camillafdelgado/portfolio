@@ -8,7 +8,7 @@ import HeroScene from '../components/HeroScene.astro';
 <Layout>
 	<Sky slot="backdrop" />
 	<main class="container">
-		<!-- The hero card is always night: Seattle skyline, rain and stars (HeroScene). -->
+		<!-- The hero is a full-width night band: Seattle skyline, rain and stars (HeroScene). -->
 		<section class="hero">
 			<HeroScene />
 			<h1 class="hero-title">
@@ -98,14 +98,15 @@ import HeroScene from '../components/HeroScene.astro';
 		flex-direction: column;
 		gap: 60px;
 		margin-top: 140px;
-		padding: 48px;
+		/* Full bleed: break out of the container's gutters to the screen edges,
+		   with the text kept in line with the rest of the page. No border,
+		   corners or shadow, so it reads as a band rather than a clickable card. */
+		margin-inline: calc(-1 * var(--gutter));
+		padding: 64px var(--gutter);
 		overflow: hidden;
-		border: 1px solid #2a2d34;
-		border-radius: 16px;
 		background: #191b20;
-		box-shadow: 0 4px 20px 4px rgb(64 64 64 / 0.05);
 		color-scheme: dark;
-		/* Night text colors, scoped to the card (the page around it is light).
+		/* Night text colors, scoped to the band (the page around it is light).
 		   Checked (WCAG AA) against the lightest part of the sky behind text. */
 		--color-text: #d4d5da;
 		--color-heading: #f3f3f5;
@@ -171,7 +172,7 @@ import HeroScene from '../components/HeroScene.astro';
 	@media (max-width: 640px) {
 		.hero {
 			margin-top: 64px;
-			padding: 24px 24px 130px; /* bottom room for the skyline */
+			padding: 32px var(--gutter) 130px; /* bottom room for the skyline */
 			gap: 32px;
 		}
 		.hero-title {
