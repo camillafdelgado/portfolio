@@ -1,6 +1,7 @@
 ---
 import Footer from '../components/Footer.astro';
 import Nav from '../components/Nav.astro';
+import SpeedInsights from '@vercel/speed-insights/astro';
 import '../styles/global.css';
 
 interface Props {
@@ -40,5 +41,7 @@ const PRELAUNCH = false;
 		<Nav />
 		<slot />
 		<Footer />
+		<!-- Vercel Speed Insights: a small deferred script, no framework. -->
+		<SpeedInsights />
 	</body>
 </html>
