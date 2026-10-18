@@ -1,7 +1,7 @@
 ---
 /**
- * Shared layout for case-study pages, matched 1:1 to the original Framer
- * pages (measured at 1280px wide) but on the site's off-white: 1035px column,
+ * Shared layout for case-study pages, based on the original Framer pages but
+ * in a narrower 780px reading column (sections nav pinned to the left),
  * hero video, the details grid, then the story (Markdown/MDX from
  * src/content/work/).
  *
@@ -157,10 +157,10 @@ const { title, status, hero, details, sections = [] } = Astro.props;
 		white-space: nowrap;
 	}
 
-	/* Page frame: the 1035px case-study column, plus a sticky side nav on its
-	   left when the screen is wide enough. */
+	/* Page frame: a 780px reading column, centered. On wide screens the
+	   sections nav sits at the left edge of the screen, sticky. */
 	.case-wrap {
-		width: min(1035px, 100% - 2 * var(--gutter));
+		width: min(780px, 100% - 2 * var(--gutter));
 		margin-inline: auto;
 	}
 
@@ -180,11 +180,15 @@ const { title, status, hero, details, sections = [] } = Astro.props;
 	}
 
 	@media (min-width: 1200px) {
+		/* nav | centered column | an empty mirror of the nav, so the column
+		   stays centered on the page */
 		.case-wrap {
 			display: grid;
-			grid-template-columns: 180px minmax(0, 1fr);
-			column-gap: 48px;
-			width: min(1035px + 228px, 100% - 2 * var(--gutter));
+			grid-template-columns: 200px minmax(0, 780px) 200px;
+			justify-content: space-between;
+			column-gap: 40px;
+			width: auto;
+			padding-inline: 40px;
 		}
 
 		.toc {
