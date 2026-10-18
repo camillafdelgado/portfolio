@@ -1,7 +1,7 @@
 ---
 /**
- * Shared layout for case-study pages, matched 1:1 to the original Framer
- * pages (measured at 1280px wide) but on the site's off-white: 1035px column,
+ * Shared layout for case-study pages, based on the original Framer pages but
+ * in a narrower 780px reading column (sections nav pinned to the left),
  * hero video, the details grid, then the story (Markdown/MDX from
  * src/content/work/).
  *
@@ -32,12 +32,37 @@ interface Props {
 	status: string;
 	hero: { video?: string; poster?: string; image?: string; background?: string; alt: string };
 	details: { label: string; items: string[] }[];
+	/** Top-level sections for the side nav (from [slug].astro). */
+	sections?: { id: string; label: string }[];
 }
 
-const { title, status, hero, details } = Astro.props;
+const { title, status, hero, details, sections = [] } = Astro.props;
 ---
 
-<Layout title={`${title} — Camilla Delgado`}>
+<Layout title={`${title} — Camilla Delgado`} header={false}>
+	<div class="case-wrap">
+	<aside class="toc">
+		<a class="back" href="/">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+			Back
+		</a>
+		{
+			sections.length > 0 && (
+				<nav aria-label="Sections">
+					<ul>
+						{sections.map((s) => (
+							<li>
+								<a href={`#${s.id}`} data-section={s.id}>
+									{s.label}
+								</a>
+							</li>
+						))}
+					</ul>
+				</nav>
+			)
+		}
+	</aside>
+
 	<main class="case">
 		<h1 class="sr-only">{title} ({status})</h1>
 
@@ -68,7 +93,59 @@ const { title, status, hero, details } = Astro.props;
 			<slot />
 		</article>
 	</main>
+	</div>
 </Layout>
+
+<script>
+	// Side nav: give each top-level section label an id (matching the links),
+	// highlight the section being read, and scroll smoothly on click.
+	const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+	const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc [data-section]')];
+	const labels = [...document.querySelectorAll<HTMLElement>('.story > p.label')];
+	labels.forEach((el) => (el.id ||= slug(el.textContent ?? '')));
+	const targets = links
+		.map((a) => document.getElementById(a.dataset.section!))
+		.filter((el): el is HTMLElement => el !== null);
+
+	let current = '';
+	function highlight() {
+		// The last section whose label has passed the top third of the screen.
+		const line = window.innerHeight * 0.33;
+		let id = targets[0]?.id ?? '';
+		for (const t of targets) if (t.getBoundingClientRect().top <= line) id = t.id;
+		if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) id = targets.at(-1)?.id ?? id;
+		if (id === current) return;
+		current = id;
+		links.forEach((a) => a.toggleAttribute('aria-current', a.dataset.section === id));
+	}
+
+	let queued = false;
+	window.addEventListener(
+		'scroll',
+		() => {
+			if (queued) return;
+			queued = true;
+			requestAnimationFrame(() => {
+				queued = false;
+				highlight();
+			});
+		},
+		{ passive: true },
+	);
+	window.addEventListener('resize', highlight);
+	highlight();
+
+	const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+	links.forEach((a) =>
+		a.addEventListener('click', (e) => {
+			const target = document.getElementById(a.dataset.section!);
+			if (!target) return;
+			e.preventDefault();
+			target.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
+			history.replaceState(history.state, '', `#${target.id}`);
+		}),
+	);
+</script>
 
 <style>
 	.sr-only {
@@ -80,11 +157,123 @@ const { title, status, hero, details } = Astro.props;
 		white-space: nowrap;
 	}
 
-	.case {
-		width: min(1035px, 100% - 2 * var(--gutter));
+	/* Page frame: a 780px reading column, centered. On wide screens the
+	   sections nav sits at the left edge of the screen, sticky. */
+	.case-wrap {
+		width: min(780px, 100% - 2 * var(--gutter));
 		margin-inline: auto;
+	}
+
+	.case {
+		min-width: 0;
 		padding-block: 48px 120px;
 		color: #404040;
+	}
+
+	/* Small screens: just the Back button, above the hero. */
+	.toc {
+		padding-top: 32px;
+	}
+
+	.toc nav {
+		display: none;
+	}
+
+	@media (min-width: 1200px) {
+		/* nav | centered column | an empty mirror of the nav, so the column
+		   stays centered on the page */
+		.case-wrap {
+			display: grid;
+			grid-template-columns: 200px minmax(0, 780px) 200px;
+			justify-content: space-between;
+			column-gap: 40px;
+			width: auto;
+			padding-inline: 40px;
+		}
+
+		.toc {
+			position: sticky;
+			top: 0;
+			align-self: start;
+			padding-top: 48px;
+		}
+
+		.toc nav {
+			display: block;
+		}
+	}
+
+	.back {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 16px 8px 12px;
+		border: 1px solid #bdbdbd;
+		border-radius: 999px;
+		font-family: var(--font-mono);
+		font-size: 13px;
+		line-height: 1.4;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #404040;
+		transition:
+			background-color 0.2s ease,
+			border-color 0.2s ease;
+	}
+
+	.back:hover {
+		background: var(--color-surface);
+		border-color: #8a8a8a;
+	}
+
+	.back svg {
+		width: 14px;
+		height: 14px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.toc ul {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		margin: 40px 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.toc nav a {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 13px;
+		line-height: 1.4;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #8a8a8a;
+		transition: color 0.2s ease;
+	}
+
+	.toc nav a:hover {
+		color: #404040;
+	}
+
+	.toc nav a[aria-current] {
+		color: var(--color-heading);
+	}
+
+	.back:focus-visible,
+	.toc nav a:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 3px;
+		border-radius: 4px;
+	}
+
+	/* Section labels land a little below the top edge when jumped to. */
+	.story :global(> p.label) {
+		scroll-margin-top: 48px;
 	}
 
 	.hero-media {
@@ -284,20 +473,21 @@ const { title, status, hero, details } = Astro.props;
 		margin-top: 120px;
 	}
 
+	/* Each insight's label, title, text and image share rows with its
+	   neighbor (subgrid), so they line up whatever the title length. */
+	.story :global(.grid-2 > div) {
+		display: grid;
+		grid-row: span 4;
+		grid-template-rows: subgrid;
+		row-gap: 0;
+	}
+
 	.story :global(.grid-2 > div > * + *) {
 		margin-top: 16px;
 	}
 
 	.story :global(.grid-2 .label + h3) {
 		margin-top: 15px;
-	}
-
-	.story :global(.grid-2 h3) {
-		min-height: 2.4em; /* titles take two lines (as on the original) */
-	}
-
-	.story :global(.grid-2 h3.one-line) {
-		min-height: 0;
 	}
 
 	.story :global(.grid-2 img) {
@@ -523,9 +713,6 @@ const { title, status, hero, details } = Astro.props;
 			grid-template-columns: 1fr;
 		}
 
-		.story :global(.grid-2 h3) {
-			min-height: 0;
-		}
 
 		.story :global(.process) {
 			grid-template-columns: 56px 1fr;
