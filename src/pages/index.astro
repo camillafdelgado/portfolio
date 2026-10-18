@@ -51,20 +51,41 @@ import HeroScene from '../components/HeroScene.astro';
 				title="AI companion for death and legacy topics"
 				status="Concept"
 				meta={['End-to-End', 'Concept', '2025']}
-				background="#fafaf8"
 			>
-				<img
-					class="phone"
-					src="/projects/companion.gif"
-					alt="Phone screens of the AI companion app"
-					width="688"
-					height="1394"
-					loading="lazy"
-				/>
+				<!-- Below the fold: loads and plays only when scrolled near (see script below). -->
+				<video
+					class="lazy-video"
+					src="/projects/companion.mp4"
+					poster="/projects/companion-poster.jpg"
+					muted
+					loop
+					playsinline
+					preload="none"
+					width="1864"
+					height="900"
+					aria-label="Walkthrough of the Sweet & Sour practice chat: the AI writes a conversation script and the user saves it"
+				></video>
 			</ProjectCard>
 		</section>
 	</main>
 </Layout>
+
+<script>
+	// Lazy videos: nothing downloads until the card is near the viewport; it plays
+	// while visible and pauses offscreen. Reduced motion keeps the poster.
+	const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+	const lazyVideos = new IntersectionObserver(
+		(entries) => {
+			for (const { target, isIntersecting } of entries) {
+				const video = target as HTMLVideoElement;
+				if (isIntersecting && !reduceMotion.matches) video.play().catch(() => {});
+				else video.pause();
+			}
+		},
+		{ rootMargin: '200px 0px' },
+	);
+	document.querySelectorAll('video.lazy-video').forEach((video) => lazyVideos.observe(video));
+</script>
 
 <style>
 	/* Hero card — from Figma "home" (182:555). */
@@ -134,14 +155,6 @@ import HeroScene from '../components/HeroScene.astro';
 		flex-direction: column;
 		gap: 120px;
 		padding-block: 80px 120px;
-	}
-
-	/* The companion card shows one phone, centered on its background. */
-	.projects .phone {
-		width: auto;
-		height: 83%;
-		margin: 4% auto 0;
-		border-radius: 12px;
 	}
 
 	/* Narrow cards: room along the bottom for the little Seattle skyline. */
