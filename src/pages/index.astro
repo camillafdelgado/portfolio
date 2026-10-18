@@ -5,10 +5,10 @@ import Sky from '../components/Sky.astro';
 import HeroScene from '../components/HeroScene.astro';
 ---
 
-<Layout timeOfDay>
+<Layout>
 	<Sky slot="backdrop" />
 	<main class="container">
-		<!-- The hero card holds the time-of-day sky (colors from sky.css). -->
+		<!-- The hero card is always night: Seattle skyline, rain and stars (HeroScene). -->
 		<section class="hero">
 			<HeroScene />
 			<h1 class="hero-title">
@@ -100,34 +100,35 @@ import HeroScene from '../components/HeroScene.astro';
 		margin-top: 140px;
 		padding: 48px;
 		overflow: hidden;
-		border: 1px solid var(--color-card-border);
+		border: 1px solid #2a2d34;
 		border-radius: 16px;
-		background: var(--color-card);
+		background: #191b20;
 		box-shadow: 0 4px 20px 4px rgb(64 64 64 / 0.05);
-		transition:
-			background-color 3s ease,
-			border-color 3s ease;
+		color-scheme: dark;
+		/* Night text colors, scoped to the card (the page around it is light).
+		   Checked (WCAG AA) against the lightest part of the sky behind text. */
+		--color-text: #d4d5da;
+		--color-heading: #f3f3f5;
+		--color-muted: #a9adbf;
+		--color-muted-large: #8a90a8;
+		--color-accent: #e3a6c2;
+		color: var(--color-text);
 	}
 
-	/* The sky: a warm horizon at the bottom-center fading out to the sky color at
-	   the edges, laid over the card at low strength so text stays readable. */
+	/* The night sky: an indigo horizon at the bottom-center fading out to deep
+	   navy at the edges, laid over the card at low strength so text stays readable. */
 	.hero::before {
 		content: '';
 		position: absolute;
 		inset: 0;
 		z-index: -1;
 		background: radial-gradient(
-			ellipse 59% 84% at var(--sun-x, 50%) 100%, /* follows the sun (HeroScene) */
-			var(--sky-glow) 0%,
-			var(--sky-mid) 50%,
-			var(--sky-top) 100%
+			ellipse 59% 84% at var(--sun-x, 50%) 100%, /* follows the moon (HeroScene) */
+			#3b4fb0 0%,
+			#222b66 50%,
+			#151a38 100%
 		);
-		opacity: var(--sky-strength);
-		transition:
-			--sky-top 3s ease,
-			--sky-mid 3s ease,
-			--sky-glow 3s ease,
-			opacity 3s ease;
+		opacity: 0.45;
 	}
 
 	.facts {

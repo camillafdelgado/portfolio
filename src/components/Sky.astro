@@ -1,10 +1,8 @@
 ---
 /**
- * Homepage time-of-day layer: loads the phase colors (sky.css, used by the
- * hero card in index.astro) and draws the full-page ASCII field, fixed behind
- * everything so the hero card and project cards cover it.
+ * Homepage backdrop: the full-page ASCII field, fixed behind everything so the
+ * hero card and project cards cover it.
  */
-import '../styles/sky.css';
 ---
 
 <canvas class="ascii" aria-hidden="true" data-sky-ascii></canvas>
@@ -58,7 +56,7 @@ import '../styles/sky.css';
 	let rows = 0;
 	let jitter = new Float32Array(0); // per-cell offset so wave fronts look ragged
 	let near = new Uint8Array(0); // distance (in cells) to the nearest text, capped
-	let rgb = '64, 64, 64';
+	const RGB = '64, 64, 64'; // glyph color on the white page
 	let running = false;
 	let last = 0;
 
@@ -80,10 +78,6 @@ import '../styles/sky.css';
 		return ((x ^ (x >>> 16)) >>> 0) % CHARS.length;
 	}
 
-
-	function readColor() {
-		rgb = getComputedStyle(document.documentElement).getPropertyValue('--ascii-rgb').trim() || rgb;
-	}
 
 	function measure() {
 		const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -170,7 +164,7 @@ import '../styles/sky.css';
 				if (d < 0.04) continue;
 
 				const k = Math.floor((px * WAVE_DIR.x + py * WAVE_DIR.y) / WAVE_LEN - s * WAVE_RATE + jitter[i]);
-				ctx.fillStyle = `rgba(${rgb}, ${(d * MAX_ALPHA).toFixed(3)})`;
+				ctx.fillStyle = `rgba(${RGB}, ${(d * MAX_ALPHA).toFixed(3)})`;
 				ctx.fillText(CHARS[charAt(i, k)], px, py);
 			}
 		}
@@ -224,16 +218,8 @@ import '../styles/sky.css';
 		}, 150);
 	});
 
-	// Follow phase changes (re-checked every minute, or forced via ?phase=).
-	new MutationObserver(() => {
-		readColor();
-		if (!running) draw(performance.now());
-	}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-phase'] });
-	setInterval(() => (window as any).__sky?.apply(), 60_000);
-
 	// Wait for DM Sans/Mono so the text positions we avoid are final.
 	document.fonts.ready.then(() => {
-		readColor();
 		measure();
 		draw(performance.now());
 		update();
