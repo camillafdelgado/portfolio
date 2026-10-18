@@ -1,7 +1,7 @@
 /* Design tokens — from the "styles" frame in Figma (Portfolio V.2) */
 :root {
   /* Colors */
-  --color-bg: #fafaf8;
+  --color-bg: #f8f8f8;
   --color-text: #404040;
   --color-heading: #1e1a15;
   /* Secondary text. Small text needs 4.5:1 (WCAG AA); large text (24px+) 3:1. */
