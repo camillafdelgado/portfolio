@@ -1,6 +1,7 @@
 ---
 import Footer from '../components/Footer.astro';
 import Nav from '../components/Nav.astro';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import phaseScript from '../scripts/phase.js?raw';
 import '../styles/global.css';
 
@@ -40,5 +41,6 @@ const PRELAUNCH = true;
 		<Nav timeOfDay={timeOfDay} />
 		<slot />
 		<Footer />
+		<SpeedInsights client:load />
 	</body>
 </html>
