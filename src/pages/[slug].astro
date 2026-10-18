@@ -10,8 +10,16 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
+
+// Side nav: one link per top-level section label (<p class="label"> at the
+// start of a line; labels nested in callouts or the insights grid are skipped).
+const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const sections = [...(entry.body ?? '').matchAll(/^<p class="label">(.+?)<\/p>/gm)].map(([, label]) => ({
+	id: slug(label),
+	label,
+}));
 ---
 
-<CaseStudy {...entry.data}>
+<CaseStudy {...entry.data} sections={sections}>
 	<Content />
 </CaseStudy>
