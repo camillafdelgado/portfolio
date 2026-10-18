@@ -6,9 +6,11 @@ import '../styles/global.css';
 
 interface Props {
 	title?: string;
+	/** Show the site header (name, links, clock). Case studies hide it. */
+	header?: boolean;
 }
 
-const { title = 'Camilla Delgado' } = Astro.props;
+const { title = 'Camilla Delgado', header = true } = Astro.props;
 
 // LAUNCH: while true, search engines are asked not to index the site (used
 // while camilladelgado.com still pointed at Framer). Launched: false.
@@ -38,7 +40,7 @@ const PRELAUNCH = false;
 	</head>
 	<body>
 		<slot name="backdrop" />
-		<Nav />
+		{header && <Nav />}
 		<slot />
 		<Footer />
 		<!-- Vercel Speed Insights: a small deferred script, no framework. -->

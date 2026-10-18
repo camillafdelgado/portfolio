@@ -39,7 +39,7 @@ interface Props {
 const { title, status, hero, details, sections = [] } = Astro.props;
 ---
 
-<Layout title={`${title} — Camilla Delgado`}>
+<Layout title={`${title} — Camilla Delgado`} header={false}>
 	<div class="case-wrap">
 	<aside class="toc">
 		<a class="back" href="/">
@@ -170,7 +170,12 @@ const { title, status, hero, details, sections = [] } = Astro.props;
 		color: #404040;
 	}
 
+	/* Small screens: just the Back button, above the hero. */
 	.toc {
+		padding-top: 32px;
+	}
+
+	.toc nav {
 		display: none;
 	}
 
@@ -183,11 +188,14 @@ const { title, status, hero, details, sections = [] } = Astro.props;
 		}
 
 		.toc {
-			display: block;
 			position: sticky;
 			top: 0;
 			align-self: start;
 			padding-top: 48px;
+		}
+
+		.toc nav {
+			display: block;
 		}
 	}
 
