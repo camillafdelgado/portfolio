@@ -36,12 +36,15 @@ import HeroScene from '../components/HeroScene.astro';
 				meta={['UX Design', 'Usability Test', '2026']}
 			>
 				<video
+					class="lazy-video"
 					src="/projects/wa211.mp4"
-					poster="/projects/wa211-poster.jpg"
-					autoplay
+					poster="/projects/wa211-poster.webp"
 					muted
 					loop
 					playsinline
+					preload="none"
+					width="1864"
+					height="900"
 					aria-label="Walkthrough of the Washington 211 search redesign"
 				></video>
 			</ProjectCard>
@@ -52,11 +55,10 @@ import HeroScene from '../components/HeroScene.astro';
 				status="Concept"
 				meta={['End-to-End', 'Concept', '2025']}
 			>
-				<!-- Below the fold: loads and plays only when scrolled near (see script below). -->
 				<video
 					class="lazy-video"
 					src="/projects/companion.mp4"
-					poster="/projects/companion-poster.jpg"
+					poster="/projects/companion-poster.webp"
 					muted
 					loop
 					playsinline
@@ -71,7 +73,7 @@ import HeroScene from '../components/HeroScene.astro';
 </Layout>
 
 <script>
-	// Lazy videos: nothing downloads until the card is near the viewport; it plays
+	// Lazy videos: nothing downloads until a card is near the viewport; it plays
 	// while visible and pauses offscreen. Reduced motion keeps the poster.
 	const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 	const lazyVideos = new IntersectionObserver(
