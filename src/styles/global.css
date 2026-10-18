@@ -16,8 +16,8 @@
   --font-mono: "DM Mono", ui-monospace, monospace;
 
   /* Layout */
-  --content-width: 1040px;
-  --gutter: clamp(20px, 6vw, 80px);
+  --content-width: 100%; /* no cap: the page fills the screen between the gutters */
+  --gutter: clamp(20px, 6vw, 80px); /* side margins: 80px on desktop, less on small screens */
 }
 
 *,
