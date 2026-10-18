@@ -217,6 +217,11 @@ const { title, status, hero, details } = Astro.props;
 		border-radius: 16px;
 	}
 
+	/* A hairline frame for media on a white background, matching the insight cards. */
+	.story :global(video.framed) {
+		border: 0.5px solid #bdbdbd;
+	}
+
 	/* Gray box: north star, problem statement */
 	.story :global(.callout) {
 		padding: 24px;
