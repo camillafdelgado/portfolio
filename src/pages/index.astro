@@ -2,15 +2,12 @@
 import Layout from '../layouts/Layout.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import Sky from '../components/Sky.astro';
-import HeroScene from '../components/HeroScene.astro';
 ---
 
 <Layout>
 	<Sky slot="backdrop" />
 	<main class="container">
-		<!-- The hero is a full-width night band: Seattle skyline, rain and stars (HeroScene). -->
 		<section class="hero">
-			<HeroScene />
 			<h1 class="hero-title">
 				Camilla is a product designer who makes complex systems easy to use.{' '}
 				<span class="muted-large">Interested in AI, design systems, and fun interactions.</span>
@@ -90,46 +87,17 @@ import HeroScene from '../components/HeroScene.astro';
 </script>
 
 <style>
-	/* Hero card — from Figma "home" (182:555). */
+	/* Hero: the intro, straight on the page (no card), over the ASCII field. */
 	.hero {
-		position: relative;
-		isolation: isolate;
 		display: flex;
 		flex-direction: column;
 		gap: 60px;
 		margin-top: 140px;
-		/* Full bleed: break out of the container's gutters to the screen edges,
-		   with the text kept in line with the rest of the page. No border,
-		   corners or shadow, so it reads as a band rather than a clickable card. */
-		margin-inline: calc(-1 * var(--gutter));
-		padding: 64px var(--gutter);
-		overflow: hidden;
-		background: #191b20;
-		color-scheme: dark;
-		/* Night text colors, scoped to the band (the page around it is light).
-		   Checked (WCAG AA) against the lightest part of the sky behind text. */
-		--color-text: #d4d5da;
-		--color-heading: #f3f3f5;
-		--color-muted: #a9adbf;
-		--color-muted-large: #8a90a8;
-		--color-accent: #e3a6c2;
-		color: var(--color-text);
 	}
 
-	/* The night sky: an indigo horizon at the bottom-center fading out to deep
-	   navy at the edges, laid over the card at low strength so text stays readable. */
-	.hero::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		z-index: -1;
-		background: radial-gradient(
-			ellipse 59% 84% at var(--sun-x, 50%) 100%, /* follows the moon (HeroScene) */
-			#3b4fb0 0%,
-			#222b66 50%,
-			#151a38 100%
-		);
-		opacity: 0.45;
+	/* Keep the headline to a readable line length on wide screens. */
+	.hero-title {
+		max-width: 900px;
 	}
 
 	.facts {
@@ -162,17 +130,9 @@ import HeroScene from '../components/HeroScene.astro';
 		padding-block: 80px 120px;
 	}
 
-	/* Narrow cards: room along the bottom for the little Seattle skyline. */
-	@media (max-width: 900px) {
-		.hero {
-			padding-bottom: 130px;
-		}
-	}
-
 	@media (max-width: 640px) {
 		.hero {
 			margin-top: 64px;
-			padding: 32px var(--gutter) 130px; /* bottom room for the skyline */
 			gap: 32px;
 		}
 		.hero-title {

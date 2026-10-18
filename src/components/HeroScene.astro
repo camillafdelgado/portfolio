@@ -1,6 +1,21 @@
 ---
 /**
- * The hero card's scene: a little pixel Seattle at night (a nod to Coffee
+ * NOT IN USE: saved for later. It was the homepage hero (removed in favor of
+ * plain intro text). To bring it back, put <HeroScene /> first inside the
+ * `.hero` section in src/pages/index.astro and give `.hero` a night look, e.g.:
+ *
+ *   .hero { position: relative; isolation: isolate; overflow: hidden;
+ *           padding: 48px 48px 130px; background: #191b20; color-scheme: dark;
+ *           --color-text: #d4d5da; --color-heading: #f3f3f5;
+ *           --color-muted: #a9adbf; --color-muted-large: #8a90a8;
+ *           --color-accent: #e3a6c2; color: var(--color-text); }
+ *   .hero::before { content: ''; position: absolute; inset: 0; z-index: -1;
+ *           opacity: 0.45; background: radial-gradient(ellipse 59% 84% at
+ *           var(--sun-x, 50%) 100%, #3b4fb0 0%, #222b66 50%, #151a38 100%); }
+ *
+ * (The full-bleed band version is in git history: commit 0858993.)
+ *
+ * The scene: a little pixel Seattle at night (a nod to Coffee
  * Talk). It always shows the night phase below; the other phases' art is kept
  * in PHASES in case the time-of-day sky comes back. Pixel shapes, smooth
  * motion and light:
