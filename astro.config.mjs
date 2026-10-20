@@ -5,6 +5,8 @@ import react from '@astrojs/react';
 
 // https://astro.build/config
 export default defineConfig({
+	// The live address, used for absolute links in the social-sharing tags.
+	site: 'https://www.camilladelgado.com',
 	// React runs the interactive case-study mockups (islands); MDX lets case
 	// studies place those components inside their Markdown.
 	integrations: [mdx(), react()],

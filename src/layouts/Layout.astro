@@ -9,9 +9,22 @@ interface Props {
 	title?: string;
 	/** Show the site header (name, links, clock). Case studies hide it. */
 	header?: boolean;
+	/** Title on link previews (LinkedIn, iMessage, Slack); defaults to the page title. */
+	shareTitle?: string;
+	description?: string;
 }
 
-const { title = 'Camilla Delgado', header = true } = Astro.props;
+const {
+	title = 'Camilla Delgado',
+	header = true,
+	shareTitle = title,
+	description = 'Camilla is a product designer who makes complex systems easy to use. Interested in AI, design systems, and fun interactions.',
+} = Astro.props;
+
+// Link previews: a screenshot of the homepage at 1200×630, saved at 2× (public/og.jpg).
+// Without the trailing slash, matching the site's own links (/washington-211).
+const pageUrl = new URL(Astro.url.pathname.replace(/(.)\/$/, '$1'), Astro.site);
+const shareImage = new URL('/og.jpg', Astro.site);
 
 // LAUNCH: while true, search engines are asked not to index the site (used
 // while camilladelgado.com still pointed at Framer). Launched: false.
@@ -39,6 +52,18 @@ const PRELAUNCH = false;
 		{PRELAUNCH && <meta name="robots" content="noindex, nofollow" />}
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={pageUrl} />
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Camilla Delgado" />
+		<meta property="og:url" content={pageUrl} />
+		<meta property="og:title" content={shareTitle} />
+		<meta property="og:description" content={description} />
+		<meta property="og:image" content={shareImage} />
+		<meta property="og:image:width" content="2400" />
+		<meta property="og:image:height" content="1260" />
+		<meta property="og:image:alt" content="Camilla Delgado's portfolio: Camilla is a product designer who makes complex systems easy to use." />
+		<meta name="twitter:card" content="summary_large_image" />
 	</head>
 	<body>
 		<slot name="backdrop" />
