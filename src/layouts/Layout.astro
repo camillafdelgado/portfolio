@@ -1,4 +1,5 @@
 ---
+import Analytics from '@vercel/analytics/astro';
 import Footer from '../components/Footer.astro';
 import Nav from '../components/Nav.astro';
 import SpeedInsights from '@vercel/speed-insights/astro';
@@ -45,5 +46,7 @@ const PRELAUNCH = false;
 		<Footer />
 		<!-- Vercel Speed Insights: a small deferred script, no framework. -->
 		<SpeedInsights />
+		<!-- Page views for Vercel Analytics (only reports on Vercel deployments) -->
+		<Analytics />
 	</body>
 </html>
