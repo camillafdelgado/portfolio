@@ -1,0 +1,157 @@
+---
+// Role-specific copy of the homepage for TikTok's UX Researcher, Global
+// E-Commerce (LATAM) application. Same layout and projects; only the wording
+// changes. Hidden from search (noindex) and links back here as "home".
+import Layout from '../layouts/Layout.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import Sky from '../components/Sky.astro';
+---
+
+<Layout
+	shareTitle="UX Researcher"
+	description="Camilla is a UX researcher who turns what people need into decisions product teams can act on. Interested in e-commerce, cross-cultural research, and mixed methods."
+	noindex
+	home
+>
+	<Sky slot="backdrop" />
+	<main class="container">
+		<section class="hero">
+			<h1 class="hero-title">
+				Camilla is a UX researcher who turns what people need into decisions product teams can act on.{' '}
+				<span class="muted-large">Interested in e-commerce, cross-cultural research, and mixed methods.</span>
+			</h1>
+
+			<dl class="facts">
+				<div>
+					<dt class="label">Currently</dt>
+					<dd>MS Human-Centered Design &amp; Engineering @ UW</dd>
+				</div>
+				<div>
+					<dt class="label">Previously</dt>
+					<dd>Washington 211, Ogilvy</dd>
+				</div>
+			</dl>
+		</section>
+
+		<section class="projects" aria-label="Projects">
+			<ProjectCard
+				href="/washington-211"
+				title="Usability testing Washington 211’s search engine"
+				status="Shipped"
+				meta={['UX Research', 'Usability Test', '2026']}
+			>
+				<video
+					class="lazy-video"
+					src="/projects/wa211.mp4"
+					poster="/projects/wa211-poster.webp"
+					muted
+					loop
+					playsinline
+					preload="none"
+					width="1864"
+					height="900"
+					aria-label="Walkthrough of the Washington 211 search redesign"
+				></video>
+			</ProjectCard>
+
+			<ProjectCard
+				href="/sweet-and-sour"
+				title="Researching how families talk about death and legacy"
+				status="Concept"
+				meta={['UX Research', 'Concept', '2025']}
+			>
+				<video
+					class="lazy-video"
+					src="/projects/companion.mp4"
+					poster="/projects/companion-poster.webp"
+					muted
+					loop
+					playsinline
+					preload="none"
+					width="1864"
+					height="900"
+					aria-label="Walkthrough of the Sweet & Sour practice chat: the AI writes a conversation script and the user saves it"
+				></video>
+			</ProjectCard>
+		</section>
+	</main>
+</Layout>
+
+<script>
+	// Lazy videos: nothing downloads until a card is near the viewport; it plays
+	// while visible and pauses offscreen. Reduced motion keeps the poster.
+	const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+	const lazyVideos = new IntersectionObserver(
+		(entries) => {
+			for (const { target, isIntersecting } of entries) {
+				const video = target as HTMLVideoElement;
+				if (isIntersecting && !reduceMotion.matches) video.play().catch(() => {});
+				else video.pause();
+			}
+		},
+		{ rootMargin: '200px 0px' },
+	);
+	document.querySelectorAll('video.lazy-video').forEach((video) => lazyVideos.observe(video));
+</script>
+
+<style>
+	/* Hero: the intro, straight on the page (no card), over the ASCII field. */
+	.hero {
+		display: flex;
+		flex-direction: column;
+		gap: 60px;
+		margin-top: 140px;
+	}
+
+	/* Keep the headline to a readable line length on wide screens. */
+	.hero-title {
+		max-width: 900px;
+	}
+
+	.facts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px 24px;
+		margin: 0;
+	}
+
+	.facts div {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		min-width: 356px;
+	}
+
+	.facts div:last-child {
+		min-width: 0;
+	}
+
+	dd {
+		margin: 0;
+	}
+
+	/* Project cards: two per row with a 24px gap (one per row on phones). */
+	.projects {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 24px;
+		padding-block: 80px 120px;
+	}
+
+	@media (max-width: 640px) {
+		.hero {
+			margin-top: 64px;
+			gap: 32px;
+		}
+		.hero-title {
+			font-size: 28px;
+		}
+		.facts div {
+			min-width: 0;
+		}
+		.projects {
+			grid-template-columns: minmax(0, 1fr);
+			padding-block: 64px 80px;
+		}
+	}
+</style>

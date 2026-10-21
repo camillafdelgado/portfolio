@@ -12,6 +12,10 @@ interface Props {
 	/** Title on link previews (LinkedIn, iMessage, Slack); defaults to the page title. */
 	shareTitle?: string;
 	description?: string;
+	/** Keep this page out of search results (e.g. role-specific pages). */
+	noindex?: boolean;
+	/** Make this page "home" for the rest of the visit: links to / lead back here. */
+	home?: boolean;
 }
 
 const {
@@ -19,6 +23,8 @@ const {
 	header = true,
 	shareTitle = title,
 	description = 'Camilla is a product designer who makes complex systems easy to use. Interested in AI, design systems, and fun interactions.',
+	noindex = false,
+	home = false,
 } = Astro.props;
 
 // Link previews: a screenshot of the homepage at 1200×630, saved at 2× (public/og.jpg).
@@ -49,7 +55,7 @@ const PRELAUNCH = false;
 			onload="this.onload=null;this.rel='stylesheet'"
 		/>
 		<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Geist:ital,wght@0,400;1,400&display=swap" /></noscript>
-		{PRELAUNCH && <meta name="robots" content="noindex, nofollow" />}
+		{(PRELAUNCH || noindex) && <meta name="robots" content="noindex, nofollow" />}
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 		<meta name="description" content={description} />
@@ -65,7 +71,7 @@ const PRELAUNCH = false;
 		<meta property="og:image:alt" content="Camilla Delgado's portfolio: Camilla is a product designer who makes complex systems easy to use." />
 		<meta name="twitter:card" content="summary_large_image" />
 	</head>
-	<body>
+	<body data-home={home ? Astro.url.pathname.replace(/(.)\/$/, '$1') : undefined}>
 		<slot name="backdrop" />
 		{header && <Nav />}
 		<slot />
@@ -76,3 +82,27 @@ const PRELAUNCH = false;
 		<Analytics />
 	</body>
 </html>
+
+<script>
+	// Role-specific homepages (e.g. /tiktok): once a visitor lands on one, the
+	// "home" links on every page (name, Work, case-study Back) lead back to it
+	// for the rest of their visit. Landing on / switches back to the main one.
+	const HOME_KEY = 'home';
+	let home: string | null = null;
+	try {
+		const own = document.body.dataset.home;
+		if (own) sessionStorage.setItem(HOME_KEY, own);
+		else if (location.pathname === '/') sessionStorage.removeItem(HOME_KEY);
+		home = sessionStorage.getItem(HOME_KEY);
+	} catch {
+		// Storage blocked: links keep pointing at /.
+	}
+
+	if (home) {
+		const here = location.pathname.replace(/(.)\/$/, '$1');
+		document.querySelectorAll<HTMLAnchorElement>('a[href="/"]').forEach((link) => {
+			link.href = home;
+			if (link.closest('nav') && here === home) link.setAttribute('aria-current', 'page');
+		});
+	}
+</script>
