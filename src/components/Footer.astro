@@ -6,7 +6,7 @@
 const links = [
 	{ label: 'LinkedIn', href: 'https://www.linkedin.com/in/camilladelgado/' },
 	{ label: 'Email', href: 'mailto:camidel@uw.edu' },
-	{ label: 'Resume', href: 'https://drive.google.com/file/d/1kOM3oj4jShSANyLl8X3gvEBGiuSP5gpV/view?usp=sharing' },
+	{ label: 'Resume', href: '/Camilla_Delgado_Product_Design.pdf', newTab: true },
 ];
 
 const now = new Date();
@@ -29,9 +29,9 @@ const heart = HEART.flatMap((row, y) => [...row].flatMap((ch, x) => (ch === '#' 
 
 		<ul class="links">
 			{
-				links.map(({ label, href }) => (
+				links.map(({ label, href, newTab }) => (
 					<li>
-						<a href={href} {...(href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : {})}>
+						<a href={href} {...(href.startsWith('http') || newTab ? { target: '_blank', rel: 'noopener' } : {})}>
 							{label}
 						</a>
 					</li>
