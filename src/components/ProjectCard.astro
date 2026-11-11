@@ -6,7 +6,7 @@
 interface Props {
 	href: string;
 	title: string;
-	status: string;
+	status?: string;
 	meta: string[];
 	/** Background behind the media, e.g. when the media doesn't fill the panel. */
 	background?: string;
@@ -21,7 +21,7 @@ const { href, title, status, meta, background } = Astro.props;
 	</div>
 	<div class="caption">
 		<h2 class="title">
-			{title} <span class="muted">/ {status}</span>
+			{title}{status && <span class="muted"> / {status}</span>}
 		</h2>
 		<p class="meta">{meta.join(' · ')}</p>
 	</div>
