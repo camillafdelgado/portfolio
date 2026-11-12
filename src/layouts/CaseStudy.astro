@@ -36,7 +36,7 @@ interface Props {
 	sections?: { id: string; label: string }[];
 }
 
-const { title, status, hero, details, sections = [] } = Astro.props;
+const { title, hero, details, sections = [] } = Astro.props;
 ---
 
 <Layout title={`${title} — Camilla Delgado`} header={false}>
@@ -64,7 +64,7 @@ const { title, status, hero, details, sections = [] } = Astro.props;
 	</aside>
 
 	<main class="case">
-		<h1 class="sr-only">{title} ({status})</h1>
+		<h1 class="case-title hero-title">{title}</h1>
 
 		<div class:list={['hero-media', { 'on-card': hero.background }]} style={hero.background ? `background: ${hero.background}` : undefined}>
 			{
@@ -148,20 +148,17 @@ const { title, status, hero, details, sections = [] } = Astro.props;
 </script>
 
 <style>
-	.sr-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-	}
-
 	/* Page frame: a 780px reading column, centered. On wide screens the
 	   sections nav sits at the left edge of the screen, sticky. */
 	.case-wrap {
 		width: min(780px, 100% - 2 * var(--gutter));
 		margin-inline: auto;
+	}
+
+	/* Title above the cover, in the homepage's Heading 1 style (.hero-title) */
+	.case-title {
+		max-width: 900px;
+		margin-bottom: 32px;
 	}
 
 	.case {
@@ -690,6 +687,10 @@ const { title, status, hero, details, sections = [] } = Astro.props;
 	}
 
 	@media (max-width: 760px) {
+		.case-title {
+			font-size: 28px;
+		}
+
 		.case {
 			padding-block: 24px 80px;
 		}
