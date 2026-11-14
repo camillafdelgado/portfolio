@@ -250,7 +250,7 @@ export default function PhoneDemo({
 											fontSize: 12,
 											fontWeight: 600,
 											color: on ? '#fff' : COLORS.muted,
-											background: on ? COLORS.accent : 'rgba(30,26,21,0.07)',
+											background: on ? COLORS.stepDot : 'rgba(30,26,21,0.07)', // darker blue so the white number passes AA
 											transition: 'background 200ms ease, color 200ms ease',
 											marginTop: 1,
 										}}
@@ -284,7 +284,7 @@ export default function PhoneDemo({
 
 			{/* Phone + After/Before toggle */}
 			<div style={{ flex: '0 0 auto', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
-				{hint && <p style={{ ...FONTS.label, margin: 0, color: '#8A8A8A', textTransform: 'uppercase' }}>{hint}</p>}
+				{hint && <p style={{ ...FONTS.label, margin: 0, color: 'var(--color-muted)', textTransform: 'uppercase' }}>{hint}</p>}
 				<div style={{ border: '1px solid rgba(30,26,21,0.08)', borderRadius: 12, overflow: 'hidden' }}>
 					<div role="tablist" aria-label="Compare with Washington 211's current site" style={{ display: 'flex' }}>
 						{(['after', 'before'] as const).map((name) => {
@@ -304,7 +304,7 @@ export default function PhoneDemo({
 										border: 'none',
 										borderBottom: `2px solid ${on ? COLORS.accent : 'transparent'}`,
 										background: on ? 'rgba(0,102,204,0.03)' : 'rgba(30,26,21,0.04)',
-										color: on ? INK : '#5A5248',
+										color: on ? 'var(--color-heading)' : '#5A5248',
 										textTransform: 'uppercase',
 										cursor: 'pointer',
 										transition: 'background 200ms, color 200ms, border-color 200ms',

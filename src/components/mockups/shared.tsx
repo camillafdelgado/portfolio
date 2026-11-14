@@ -35,12 +35,14 @@ export const FONTS = {
 	label: { fontFamily: '"DM Mono", monospace', fontSize: 11, fontWeight: 400, letterSpacing: '0.08em', lineHeight: 1 },
 } satisfies Record<string, CSSProperties>;
 
+// Text around the phones uses the site's color tokens (global.css).
 export const COLORS = {
-	text: 'rgb(30, 26, 21)',
-	body: 'rgb(64, 64, 64)',
+	text: 'var(--color-heading)',
+	body: 'var(--color-text)',
 	muted: 'rgb(107, 102, 96)',
 	accent: 'rgb(59, 130, 246)',
-	activeBackground: 'rgb(255, 255, 255)',
+	stepDot: 'rgb(37, 99, 235)', // active step number: white on this is 5.2:1
+	activeBackground: 'var(--color-surface)',
 };
 
 export const SCREEN_FONT = 'Inter, -apple-system, "Segoe UI", sans-serif';

@@ -249,12 +249,12 @@ const { title, hero, details, sections = [] } = Astro.props;
 		line-height: 1.4;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: #8a8a8a;
+		color: var(--color-muted);
 		transition: color 0.2s ease;
 	}
 
 	.toc nav a:hover {
-		color: #404040;
+		color: var(--color-text);
 	}
 
 	.toc nav a[aria-current] {
@@ -345,7 +345,7 @@ const { title, hero, details, sections = [] } = Astro.props;
 		line-height: 1.4;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: #8a8a8a;
+		color: var(--color-muted);
 	}
 
 	.story :global(> .label) {
@@ -583,7 +583,7 @@ const { title, hero, details, sections = [] } = Astro.props;
 		font-family: var(--font-mono);
 		font-size: 13px;
 		text-align: center;
-		color: #8a8a8a;
+		color: var(--color-muted);
 	}
 
 	.story :global(h3.big + p + .placeholder) {

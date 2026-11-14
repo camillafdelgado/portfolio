@@ -9,7 +9,7 @@
  * 211's current site.
  */
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type RefObject } from 'react';
-import { EASE_STD, INK, Icon, PHONE_W, PhoneFrame } from './shared';
+import { EASE_STD, Icon, PHONE_W, PhoneFrame } from './shared';
 
 export type CompareState = { cursor: string; cursorVisible: boolean; pressed: boolean; [key: string]: unknown };
 export type CompareScreenProps<S extends CompareState> = { state: S; reduceMotion: boolean };
@@ -152,7 +152,7 @@ export default function CompareDemo<S extends CompareState>({
 					border: 'none',
 					borderBottom: `2px solid ${on ? ACCENT : 'transparent'}`,
 					background: on ? 'rgba(0,102,204,0.03)' : 'rgba(30,26,21,0.04)',
-					color: on ? INK : '#5A5248',
+					color: on ? 'var(--color-heading)' : '#5A5248',
 					textTransform: 'uppercase',
 					cursor: 'pointer',
 					transition: 'background 200ms, color 200ms, border-color 200ms',
@@ -164,16 +164,16 @@ export default function CompareDemo<S extends CompareState>({
 	};
 
 	return (
-		<div ref={rootRef} className="compare-demo" style={{ width: '100%', boxSizing: 'border-box', color: INK }}>
+		<div ref={rootRef} className="compare-demo" style={{ width: '100%', boxSizing: 'border-box', color: 'var(--color-heading)' }}>
 			<style>{`
 				@keyframes sedShimmer { 0% { background-position: 100% 50% } 100% { background-position: 0 50% } }
 				.fc-tab:focus-visible, .fc-replay:focus-visible { outline: 2px solid ${ACCENT}; outline-offset: -2px; }
 			`}</style>
-			<h3 style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 32, fontWeight: 600, letterSpacing: titleLetterSpacing, lineHeight: 1.2, margin: '0 0 12px', color: INK }}>
+			<h3 style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 32, fontWeight: 600, letterSpacing: titleLetterSpacing, lineHeight: 1.2, margin: '0 0 12px', color: 'var(--color-heading)' }}>
 				{title}
 			</h3>
-			<p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 16, fontWeight: 400, lineHeight: 1.65, margin: '0 0 16px', color: '#404040' }}>{body}</p>
-			{hint && <p style={{ ...LABEL, margin: '0 0 10px', color: '#8A8A8A', textTransform: 'uppercase' }}>{hint}</p>}
+			<p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 16, fontWeight: 400, lineHeight: 1.65, margin: '0 0 16px', color: 'var(--color-text)' }}>{body}</p>
+			{hint && <p style={{ ...LABEL, margin: '0 0 10px', color: 'var(--color-muted)', textTransform: 'uppercase' }}>{hint}</p>}
 			<div style={{ border: '1px solid rgba(30,26,21,0.08)', borderRadius: 12, overflow: 'hidden' }}>
 				<div role="tablist" aria-label={tablistLabel ?? `Compare: ${title}`} style={{ display: 'flex' }}>
 					{tabButton('after', 'After')}

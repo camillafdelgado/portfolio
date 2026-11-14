@@ -30,6 +30,18 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Big screens: scale the whole page up a step (type, spacing and media
+   together), so text doesn't look tiny on wide monitors. */
+@media (min-width: 1680px) {
+  html { zoom: 1.125; }
+}
+@media (min-width: 1920px) {
+  html { zoom: 1.25; }
+}
+@media (min-width: 2400px) {
+  html { zoom: 1.4; }
+}
+
 body {
   margin: 0;
   background: var(--color-bg);
